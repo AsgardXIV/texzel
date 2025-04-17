@@ -1,0 +1,19 @@
+* text=auto !eol
+
+*.zig text eol=lf
+*.zon text eol=lf
+
+*.c text eol=lf
+*.cpp text eol=lf
+*.cxx text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+*.inl text eol=lf
+*.ixx text eol=lf
+
+*.txt text eol=lf
+*.md text eol=lf
+
+*.json text eol=lf
+
+*.wgsl text eol=lf

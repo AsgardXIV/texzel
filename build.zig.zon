@@ -1,0 +1,18 @@
+.{
+    .name = .texzel,
+    .version = "0.0.0",
+    .fingerprint = 0xdbc0c12d58580bdf, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.14.0",
+
+    .dependencies = .{},
+
+    .paths = .{
+        ".gitignore",
+        ".gitattributes",
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "LICENSE",
+        "README.md",
+    },
+}

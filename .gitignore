@@ -1,0 +1,26 @@
+# Zig
+*zig-cache
+*zig-out
+
+# VSCode
+.history/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# idea
+.idea/
+*.iml
+
+# Mac
+*.DS_Store
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+$RECYCLE.BIN/
+[Dd]esktop.ini
+*.lnk
