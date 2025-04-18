@@ -3,10 +3,6 @@ pub const RGBA8U = extern struct {
     g: u8 = 0,
     b: u8 = 0,
     a: u8 = 255,
-
-    pub fn byteSizeForTexels(width: u32, height: u32) usize {
-        return @sizeOf(RGBA8U) * width * height;
-    }
 };
 
 pub const BGRA8U = extern struct {
@@ -14,10 +10,6 @@ pub const BGRA8U = extern struct {
     g: u8 = 0,
     r: u8 = 0,
     a: u8 = 255,
-
-    pub fn byteSizeForTexels(width: u32, height: u32) usize {
-        return @sizeOf(BGRA8U) * width * height;
-    }
 };
 
 pub const RGBA16U = extern struct {
@@ -25,10 +17,6 @@ pub const RGBA16U = extern struct {
     g: u16 = 0,
     b: u16 = 0,
     a: u16 = 1.0,
-
-    pub fn byteSizeForTexels(width: u32, height: u32) usize {
-        return @sizeOf(RGBA16U) * width * height;
-    }
 };
 
 pub const RGBA16F = extern struct {
@@ -36,8 +24,4 @@ pub const RGBA16F = extern struct {
     g: f16 = 0,
     b: f16 = 0,
     a: f16 = 1.0,
-
-    pub fn byteSizeForTexels(width: u32, height: u32) usize {
-        return @sizeOf(RGBA16F) * width * height;
-    }
 };
