@@ -1,7 +1,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
-const RGBATexel = @import("texel_types.zig").RGBATexel;
+const RGBATexel = @import("texel_types.zig").RGBAU;
 
 pub fn RawImageData(comptime TexelType: type) type {
     return struct {
