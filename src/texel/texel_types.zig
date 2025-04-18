@@ -9,6 +9,17 @@ pub const RGBA8U = extern struct {
     }
 };
 
+pub const BGRA8U = extern struct {
+    b: u8 = 0,
+    g: u8 = 0,
+    r: u8 = 0,
+    a: u8 = 255,
+
+    pub fn byteSizeForTexels(width: u32, height: u32) usize {
+        return @sizeOf(BGRA8U) * width * height;
+    }
+};
+
 pub const RGBA16U = extern struct {
     r: u16 = 0,
     g: u16 = 0,
