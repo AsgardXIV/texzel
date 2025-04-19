@@ -16,7 +16,7 @@ pub const BC3Block = extern struct {
     bc1_block: bc1.BC1Block align(1),
 
     pub fn decompressTexels(self: *const BC3Block, comptime ResultTexels: type) [texel_count]ResultTexels {
-        var texels = self.bc1_block.decompressTexels(ResultTexels);
+        const texels = self.bc1_block.decompressTexels(ResultTexels);
 
         return texels;
     }
