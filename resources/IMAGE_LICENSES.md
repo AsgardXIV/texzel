@@ -4,4 +4,8 @@ Texzel uses various images for examples. The licenses for these images and links
 ## Zig Logos
 Link: https://github.com/ziglang/logo
 * Zig Logo: Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
-* Zig Mascots: Attribution 4.0 International (CC BY 4.0).
+* Zig Mascots (Ziggy, Zero): Attribution 4.0 International (CC BY 4.0).
+
+## Other
+* Alpha Gradient
+    * Link: https://commons.wikimedia.org/wiki/File:Hue_alpha_falloff.png
