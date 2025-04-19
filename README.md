@@ -18,3 +18,5 @@ A texture encoding/decoding library for Zig.
 ## Current State
 Texzel is still very early in development and only supports a couple of formats currently.
 The API is not stable, contributions are welcome.
+
+Texzel does not currently support file formats beyond some testing, as such you must provide raw buffers to compress/decompress.
