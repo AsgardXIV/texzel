@@ -3,12 +3,12 @@
 A texture encoding/decoding library for Zig.
 
 ## Supported Formats
-| Format | Encode | Decode |
+| Format | Decompress | Compress |
 |---|---|---|
 | Raw | ✅ | ✅ |
 | BC1 (DXT1) | ✅ | ✅ |
 | BC1a (DXT1) | ✅ | ✅ |
-| BC2 (DXT3) | ❌ | ❌ |
+| BC2 (DXT3) | ✅ | ❌ |
 | BC3 (DXT5) | ❌ | ❌ |
 | BC4 | ❌ | ❌ |
 | BC5 | ❌ | ❌ |
