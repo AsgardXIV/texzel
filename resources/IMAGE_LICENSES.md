@@ -9,3 +9,5 @@ Link: https://github.com/ziglang/logo
 ## Other
 * Alpha Gradient
     * Link: https://commons.wikimedia.org/wiki/File:Hue_alpha_falloff.png
+* Gradient
+    * Link: https://commons.wikimedia.org/wiki/File:Rainbow-gradient-fully-saturated-diagonal.svg
