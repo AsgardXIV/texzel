@@ -5,7 +5,7 @@
 //! For BCn formats, see `block`.
 //! For raw texel formats, see `texel`.
 
-pub const texel = @import("texel.zig");
+pub const core = @import("core.zig");
 pub const utils = @import("utils.zig");
 pub const block = @import("block.zig");
 
