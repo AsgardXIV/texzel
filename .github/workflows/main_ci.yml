@@ -26,8 +26,6 @@ jobs:
         run: zig fmt --check .
       - name: Run tests
         run: zig build test
-      - name: Build docs
-        run: zig build docs
       - name: Build debug
         run: zig build -Doptimize=Debug -p zig-out/debug
       - name: Build release
