@@ -25,3 +25,7 @@ pub const RGBA16F = extern struct {
     b: f16 = 0,
     a: f16 = 1.0,
 };
+
+pub const R8U = struct {
+    r: u8 = 0,
+};
