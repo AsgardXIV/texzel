@@ -9,7 +9,7 @@ A texture encoding/decoding library for Zig.
 | BC1 (DXT1) | ✅ | ✅ |
 | BC1a (DXT1) | ✅ | ✅ |
 | BC2 (DXT3) | ✅ | ✅ |
-| BC3 (DXT5) | ✅ | ❌ |
+| BC3 (DXT5) | ✅ | ✅ |
 | BC4 | ❌ | ❌ |
 | BC5 | ❌ | ❌ |
 | BC6 | ❌ | ❌ |
