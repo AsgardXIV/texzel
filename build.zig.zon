@@ -12,6 +12,7 @@
         "build.zig",
         "build.zig.zon",
         "src",
+        "resources",
         "LICENSE",
         "README.md",
     },
