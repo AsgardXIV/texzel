@@ -1,6 +1,6 @@
 # Texzel
 
-A texture encoding/decoding library for Zig.
+Texzel is a Zig library for texture encoding/decoding. It aims to be pure Zig and depdendency free.
 
 ## Supported Formats
 | Format | Decompress | Compress |
@@ -11,7 +11,7 @@ A texture encoding/decoding library for Zig.
 | BC2 (DXT3) | ✅ | ✅ |
 | BC3 (DXT5) | ✅ | ✅ |
 | BC4 | ✅ | ✅ |
-| BC5 | ❌ | ❌ |
+| BC5 | ✅ | ✅ |
 | BC6 | ❌ | ❌ |
 | BC7 | ❌ | ❌ |
 
