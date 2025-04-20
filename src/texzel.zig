@@ -3,7 +3,7 @@
 //! This library provides a set of functions to encode and decode textures in various formats.
 //!
 //! For BCn formats, see `block`.
-//! For raw texel formats, see `texel`.
+//! For raw formats, see `core.RawImageData`.
 
 pub const core = @import("core.zig");
 pub const utils = @import("utils.zig");
