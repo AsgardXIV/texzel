@@ -19,5 +19,7 @@ Texzel is still very early in development and the API is not stable, contributio
 
 Texzel does not currently support file formats beyond some testing, as such you must provide raw buffers to compress/decompress.
 
-## Acknowledgements
-* BC7 support is mostly ported from https://github.com/hasenbanck/block_compression and https://github.com/iOrange/bcdec/
+## License
+Texzel is licensed under the [MIT License](LICENSE).
+
+Licenses for third-party software and assets can be found [here](THIRD_PARTY_LICENSES.md).
