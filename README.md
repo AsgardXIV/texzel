@@ -11,8 +11,8 @@ Texzel is a Zig library for texture encoding/decoding. It aims to be pure Zig an
 | BC3 (DXT5) | ✅ | ✅ | |
 | BC4 | ✅ | ✅ | |
 | BC5 | ✅ | ✅ | | 
-| BC6 | ❌ | ❌ | | 
-| BC7 | ✅ | ❌ | Decoding only at this time |
+| BC6h | ✅ | ❌ | Decoding only at this time. Encoding is planned. | 
+| BC7 | ✅ | ❌ | Decoding only at this time. Encoding is planned. |
 
 ## Current State
 Texzel is still very early in development and the API is not stable, contributions are welcome.
