@@ -20,4 +20,4 @@ Texzel is still very early in development and the API is not stable, contributio
 Texzel does not currently support file formats beyond some testing, as such you must provide raw buffers to compress/decompress.
 
 ## Acknowledgements
-* BC7 support is mostly ported from https://github.com/hasenbanck/block_compression/
+* BC7 support is mostly ported from https://github.com/hasenbanck/block_compression and https://github.com/iOrange/bcdec/
