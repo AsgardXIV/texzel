@@ -19,6 +19,22 @@ Texzel is still very early in development and the API is not stable, contributio
 
 Texzel does not currently support file formats beyond some testing, as such you must provide raw buffers to compress/decompress.
 
+## Adding to your project
+1. Add texzel to your build.zig.zon
+```
+zig fetch --save git+https://github.com/AsgardXIV/texzel
+```
+
+2. Add the dependency to your project, for example:
+```zig
+const texzel_dependency = b.dependency("texzel", .{
+  .target = target,
+  .optimize = optimize,
+});
+
+exe_mod.addImport("texzel", texzel_dependency.module("texzel"));
+```
+
 ## License
 Texzel is licensed under the [MIT License](LICENSE).
 
