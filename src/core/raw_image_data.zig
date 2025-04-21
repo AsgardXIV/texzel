@@ -5,17 +5,17 @@ const conversion = @import("conversion.zig");
 
 const Dimensions = @import("../core/Dimensions.zig");
 
-/// A raw image data structure with the given TexelType.
+/// A raw image data structure with the given PixelFormat.
 ///
-/// `TexelType` is the type of texel to use.
-pub fn RawImageData(comptime InTexelType: type) type {
+/// `PixelFormat` is the type of texel to use.
+pub fn RawImageData(comptime InPixelFormat: type) type {
     return struct {
-        pub const TexelType = InTexelType;
+        pub const PixelFormat = InPixelFormat;
         const Self = @This();
 
         allocator: Allocator,
         dimensions: Dimensions,
-        data: []TexelType,
+        data: []PixelFormat,
 
         /// Initializes a blank RawImageData instance with the given allocator, width, and height.
         ///
@@ -33,7 +33,7 @@ pub fn RawImageData(comptime InTexelType: type) type {
             image_data.* = .{
                 .allocator = allocator,
                 .dimensions = dimensions,
-                .data = try allocator.alloc(TexelType, dimensions.size()),
+                .data = try allocator.alloc(PixelFormat, dimensions.size()),
             };
 
             return image_data;
@@ -50,12 +50,12 @@ pub fn RawImageData(comptime InTexelType: type) type {
             const image_data = try allocator.create(Self);
             errdefer allocator.destroy(image_data);
 
-            const slice = std.mem.bytesAsSlice(TexelType, buffer);
+            const slice = std.mem.bytesAsSlice(PixelFormat, buffer);
 
             image_data.* = .{
                 .allocator = allocator,
                 .dimensions = dimensions,
-                .data = try allocator.dupe(TexelType, slice),
+                .data = try allocator.dupe(PixelFormat, slice),
             };
 
             return image_data;
@@ -77,20 +77,20 @@ pub fn RawImageData(comptime InTexelType: type) type {
         // Uses `conversion.convertTexel` to convert each texel.
         //
         // `allocator` is the allocator to use for the new image data.
-        // `NewTexelType` is the type of texel to convert to.
+        // `NewPixelFormat` is the type of texel to convert to.
         //
         // Returns a pointer to the new image data.
         // Caller is responsible for freeing the memory.
-        pub fn convertTo(image_data: *Self, allocator: Allocator, comptime NewTexelType: type) !*RawImageData(NewTexelType) {
-            if (TexelType == NewTexelType) {
+        pub fn convertTo(image_data: *Self, allocator: Allocator, comptime NewPixelFormat: type) !*RawImageData(NewPixelFormat) {
+            if (PixelFormat == NewPixelFormat) {
                 return Self.initFromBuffer(allocator, image_data.dimensions, image_data.asBuffer());
             }
 
-            const new_image_data = try RawImageData(NewTexelType).init(allocator, image_data.dimensions);
+            const new_image_data = try RawImageData(NewPixelFormat).init(allocator, image_data.dimensions);
             errdefer allocator.destroy(new_image_data);
 
             for (0..new_image_data.data.len) |i| {
-                new_image_data.data[i] = conversion.convertTexel(image_data.data[i], NewTexelType);
+                new_image_data.data[i] = conversion.convertTexel(image_data.data[i], NewPixelFormat);
             }
 
             return new_image_data;
@@ -99,8 +99,8 @@ pub fn RawImageData(comptime InTexelType: type) type {
 }
 
 test RawImageData {
-    const RGBA8U = @import("texel_types.zig").RGBA8U;
-    const BGRA8U = @import("texel_types.zig").BGRA8U;
+    const RGBA8U = @import("../pixel_formats.zig").RGBA8U;
+    const BGRA8U = @import("../pixel_formats.zig").BGRA8U;
 
     const allocator = std.testing.allocator;
 

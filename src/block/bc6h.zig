@@ -5,7 +5,7 @@ const std = @import("std");
 
 const conversion = @import("../core/conversion.zig");
 
-const RGB16F = @import("../core/texel_types.zig").RGB16F;
+const RGB16F = @import("../pixel_formats.zig").RGB16F;
 
 pub const BC6HBlock = extern struct {
     pub const texel_width = 4;

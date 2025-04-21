@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const texels = @import("texel_types.zig");
+const texels = @import("../pixel_formats.zig");
 
 /// A version of `convertTexel` that converts an array of texels.
 ///

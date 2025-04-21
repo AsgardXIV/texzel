@@ -5,7 +5,7 @@ const std = @import("std");
 
 const conversion = @import("../core/conversion.zig");
 
-const RGBA8U = @import("../core/texel_types.zig").RGBA8U;
+const RGBA8U = @import("../pixel_formats.zig").RGBA8U;
 
 pub const BC7Block = extern struct {
     pub const texel_width = 4;

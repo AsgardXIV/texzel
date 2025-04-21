@@ -3,7 +3,7 @@ const std = @import("std");
 const conversion = @import("../core/conversion.zig");
 const helpers = @import("helpers.zig");
 
-const R8U = @import("../core/texel_types.zig").R8U;
+const R8U = @import("../pixel_formats.zig").R8U;
 
 pub const BC4Block = extern struct {
     pub const texel_width = 4;
@@ -32,11 +32,11 @@ pub const BC4Block = extern struct {
         return texels;
     }
 
-    pub fn encodeBlock(comptime TexelType: type, raw_texels: [texel_count]TexelType, _: EncodeOptions) !BC4Block {
-        return computeBlock(TexelType, raw_texels);
+    pub fn encodeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat, _: EncodeOptions) !BC4Block {
+        return computeBlock(PixelFormat, raw_texels);
     }
 
-    fn computeBlock(comptime TexelType: type, raw_texels: [texel_count]TexelType) BC4Block {
+    fn computeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat) BC4Block {
         var min_endpoint: u8 = 255;
         var max_endpoint: u8 = 0;
         var texel_values: [texel_count]u8 = undefined;

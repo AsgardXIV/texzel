@@ -5,8 +5,8 @@ const conversion = @import("../core/conversion.zig");
 const bc1 = @import("bc1.zig");
 const bc4 = @import("bc4.zig");
 
-const R8U = @import("../core/texel_types.zig").R8U;
-const RGBA8U = @import("../core/texel_types.zig").RGBA8U;
+const R8U = @import("../pixel_formats.zig").R8U;
+const RGBA8U = @import("../pixel_formats.zig").RGBA8U;
 
 pub const BC3Block = extern struct {
     pub const texel_width = 4;
@@ -30,7 +30,7 @@ pub const BC3Block = extern struct {
         return texels;
     }
 
-    pub fn encodeBlock(comptime TexelType: type, raw_texels: [texel_count]TexelType, _: EncodeOptions) !BC3Block {
+    pub fn encodeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat, _: EncodeOptions) !BC3Block {
         // Swizzle the alpha channel into the red channel for BC4 compression
 
         var alpha_in_red: [texel_count]R8U = undefined;
@@ -43,7 +43,7 @@ pub const BC3Block = extern struct {
         // Compress both blocks
         return .{
             .bc4_block = try bc4.BC4Block.encodeBlock(R8U, alpha_in_red, .{}),
-            .bc1_block = try bc1.BC1Block.encodeBlock(TexelType, raw_texels, .{ .allow_alpha = true }),
+            .bc1_block = try bc1.BC1Block.encodeBlock(PixelFormat, raw_texels, .{ .allow_alpha = true }),
         };
     }
 };

@@ -35,6 +35,60 @@ const texzel_dependency = b.dependency("texzel", .{
 exe_mod.addImport("texzel", texzel_dependency.module("texzel"));
 ```
 
+## Usage Example
+```zig
+const allocator = ...;
+
+// Import Texzel
+const texzel = @import("texzel");
+
+// Load a raw rgba image
+const file = try std.fs.cwd().openFile("resources/ziggy.rgba", .{ .mode = .read_only });
+defer file.close();
+const raw_buffer = try file.readToEndAlloc(std.testing.allocator, 2 << 20);
+defer allocator.free(raw_buffer);
+
+// Image dimensions
+const dimensions = texzel.core.Dimensions{
+    .width = 512,
+    .height = 512,
+};
+
+// Create a raw image data instance from the buffer
+const raw_image = try texzel.rawImageFromBuffer(
+    allocator,
+    texzel.pixel_formats.RGBA8U,
+    dimensions,
+    raw_buffer,
+); 
+defer raw_image.deinit();
+
+// Compress to BC1
+const compressed_buffer = try texzel.encode(
+    allocator,
+    texzel.block.bc1.BC1Block,
+    texzel.pixel_formats.RGBA8U,
+    .{},
+    raw_image,
+); 
+defer allocator.free(compressed_buffer);
+
+// Decompress to RawImage but in BGRA8U this time
+const new_raw_image = try texzel.decode(
+    allocator,
+    texzel.block.bc1.BC1Block,
+    texzel.pixel_formats.BGRA8U,
+    dimensions,
+    .{},
+    compressed_buffer,
+);
+defer new_raw_image.deinit();
+
+// Access the new raw buffer
+const new_raw_buffer = new_raw_image.asBuffer();
+_ = new_raw_buffer; // Do something
+```
+
 ## License
 Texzel is licensed under the [MIT License](LICENSE).
 

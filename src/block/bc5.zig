@@ -4,8 +4,8 @@ const conversion = @import("../core/conversion.zig");
 
 const bc4 = @import("bc4.zig");
 
-const R8U = @import("../core/texel_types.zig").R8U;
-const RG8U = @import("../core/texel_types.zig").RG8U;
+const R8U = @import("../pixel_formats.zig").R8U;
+const RG8U = @import("../pixel_formats.zig").RG8U;
 
 pub const BC5Block = extern struct {
     pub const texel_width = 4;
@@ -32,7 +32,7 @@ pub const BC5Block = extern struct {
         return texels;
     }
 
-    pub fn encodeBlock(comptime TexelType: type, raw_texels: [texel_count]TexelType, _: EncodeOptions) !BC5Block {
+    pub fn encodeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat, _: EncodeOptions) !BC5Block {
         // Copy and swizzle as needed
         var red_in_red: [texel_count]R8U = undefined;
         var green_in_red: [texel_count]R8U = undefined;

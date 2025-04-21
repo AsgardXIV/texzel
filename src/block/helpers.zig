@@ -8,14 +8,14 @@ const Dimensions = @import("../core/Dimensions.zig");
 pub fn decodeBlock(
     allocator: Allocator,
     comptime BlockType: type,
-    comptime TexelType: type,
+    comptime PixelFormat: type,
     dimensions: Dimensions,
     compressed_data: []const u8,
     options: BlockType.DecodeOptions,
-) !*RawImageData(TexelType) {
+) !*RawImageData(PixelFormat) {
     const block_dimensions = calculateBlocksInTexture(BlockType, dimensions);
 
-    const image_data = try RawImageData(TexelType).init(allocator, dimensions);
+    const image_data = try RawImageData(PixelFormat).init(allocator, dimensions);
 
     for (0..block_dimensions.width) |bx| {
         for (0..block_dimensions.height) |by| {
@@ -33,7 +33,7 @@ pub fn decodeBlock(
                         const texel = texels[block_texel_idx];
 
                         const texel_idx = global_y * image_data.dimensions.width + global_x;
-                        image_data.data[texel_idx] = conversion.convertTexel(texel, TexelType);
+                        image_data.data[texel_idx] = conversion.convertTexel(texel, PixelFormat);
                     }
                 }
             }
@@ -46,8 +46,8 @@ pub fn decodeBlock(
 pub fn encodeBlock(
     allocator: Allocator,
     comptime BlockType: type,
-    comptime TexelType: type,
-    image_data: *RawImageData(TexelType),
+    comptime PixelFormat: type,
+    image_data: *RawImageData(PixelFormat),
     options: BlockType.EncodeOptions,
 ) ![]const u8 {
     const block_dimensions = calculateBlocksInTexture(BlockType, image_data.dimensions);
@@ -56,14 +56,14 @@ pub fn encodeBlock(
 
     // We keep track of the last valid texel to handle padding
     // This reduces the impact of padding on the final image
-    var last_valid = TexelType{};
+    var last_valid = PixelFormat{};
 
     for (0..block_dimensions.width) |bx| {
         for (0..block_dimensions.height) |by| {
             const block_index = by * block_dimensions.width + bx;
             const block_ptr = &compressed_data[block_index];
 
-            var texels: [BlockType.texel_count]TexelType = undefined;
+            var texels: [BlockType.texel_count]PixelFormat = undefined;
             for (0..BlockType.texel_height) |y| {
                 for (0..BlockType.texel_width) |x| {
                     const global_x = bx * BlockType.texel_width + x;
@@ -76,7 +76,7 @@ pub fn encodeBlock(
                 }
             }
 
-            block_ptr.* = try BlockType.encodeBlock(TexelType, texels, options);
+            block_ptr.* = try BlockType.encodeBlock(PixelFormat, texels, options);
         }
     }
 

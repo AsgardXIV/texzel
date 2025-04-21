@@ -2,7 +2,7 @@ const std = @import("std");
 
 const conversion = @import("../core/conversion.zig");
 const helpers = @import("helpers.zig");
-const RGBA8U = @import("../core/texel_types.zig").RGBA8U;
+const RGBA8U = @import("../pixel_formats.zig").RGBA8U;
 
 pub const BC1Block = extern struct {
     pub const texel_width = 4;
@@ -61,7 +61,7 @@ pub const BC1Block = extern struct {
         return mapped;
     }
 
-    pub fn encodeBlock(comptime TexelType: type, raw_texels: [texel_count]TexelType, options: EncodeOptions) !BC1Block {
+    pub fn encodeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat, options: EncodeOptions) !BC1Block {
         // Quantize the texels to 5-6-5-1 format
         var texels: [texel_count]ColorWithAlphaBit = undefined;
         inline for (raw_texels, 0..) |texel, i| {
