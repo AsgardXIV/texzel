@@ -3,10 +3,10 @@
 Texzel is a Zig library for texture encoding/decoding. It aims to be pure Zig and depdendency free.
 
 ## Supported Formats
-| Format | Encode | Decode | Notes |
+| Format | Decode | Encode | Notes |
 |---|---|---|---|
 | Raw | ✅ | ✅ |  |
-| BC1 (DXT1) | ✅ | ✅ | BC1a supported, any pixel with alpha < 255 will be treated as fully transparent |
+| BC1 (DXT1) | ✅ | ✅ | BC1a is supported, any texel with alpha < 255 will be treated as fully transparent |
 | BC2 (DXT3) | ✅ | ✅ | |
 | BC3 (DXT5) | ✅ | ✅ | |
 | BC4 | ✅ | ✅ | |
