@@ -3,7 +3,6 @@
 //! This library provides a set of functions to encode and decode textures in various formats.
 
 pub const core = @import("core.zig");
-pub const utils = @import("utils.zig");
 pub const block = @import("block.zig");
 pub const pixel_formats = @import("pixel_formats.zig");
 
@@ -90,5 +89,5 @@ pub fn decode(
 }
 
 test {
-    @import("std").testing.refAllDeclsRecursive(@This());
+    std.testing.refAllDeclsRecursive(@This());
 }
