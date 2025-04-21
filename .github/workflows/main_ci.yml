@@ -24,10 +24,10 @@ jobs:
       - name: Check format
         continue-on-error: true
         run: zig fmt --check .
-      - name: Run tests
-        run: zig build test
       - name: Build debug
         run: zig build -Doptimize=Debug -p zig-out/debug
       - name: Build release
         run: zig build -Doptimize=ReleaseFast -p zig-out/release
+      - name: Run tests
+        run: zig build test
 
