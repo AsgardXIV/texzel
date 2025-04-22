@@ -597,12 +597,34 @@ test "bc6h decompress" {
             .height = 512,
         };
 
-        const decompress_result = try helpers.decodeBlock(allocator, BC6HBlock, RGB16F, dimensions, read_result, .{});
+        const decompress_result = try helpers.decodeBlock(allocator, BC6HBlock, RGB16F, dimensions, read_result, .{ .is_signed = false });
         defer decompress_result.deinit();
 
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
 
         const expected_hash = 0x674C47;
+
+        try std.testing.expectEqual(expected_hash, hash);
+    }
+
+    {
+        const file = try std.fs.cwd().openFile("resources/night.bc6hs", .{ .mode = .read_only });
+        defer file.close();
+
+        const read_result = try file.readToEndAlloc(allocator, 1 << 20);
+        defer allocator.free(read_result);
+
+        const dimensions = Dimensions{
+            .width = 1024,
+            .height = 512,
+        };
+
+        const decompress_result = try helpers.decodeBlock(allocator, BC6HBlock, RGB16F, dimensions, read_result, .{ .is_signed = true });
+        defer decompress_result.deinit();
+
+        const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
+
+        const expected_hash = 0xE359EA22;
 
         try std.testing.expectEqual(expected_hash, hash);
     }

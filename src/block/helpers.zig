@@ -87,7 +87,7 @@ pub fn mixValue(comptime T: type, a: T, b: T, w0: u32, w1: u32) T {
     const calc_type = if (@typeInfo(T) == .int) @Type(.{
         .int = .{
             .signedness = .unsigned,
-            .bits = @typeInfo(T).int.bits * 2,
+            .bits = (@typeInfo(T).int.bits * 2) + 1,
         },
     }) else T;
 
