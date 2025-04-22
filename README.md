@@ -8,13 +8,13 @@ It is currently focused on the BCn codecs as well as converting between differen
 | Format | Decode | Encode | Notes |
 |---|---|---|---|
 | Raw | ✅ | ✅ | Supports any arbitrary pixel layout and can swizzle when converting. Some common ones are defined for convenience. |
-| BC1 (DXT1) | ✅ | ✅ | BC1a is supported, any texel with alpha < 255 will be treated as fully transparent |
-| BC2 (DXT3) | ✅ | ✅ | |
-| BC3 (DXT5) | ✅ | ✅ | |
-| BC4 | ✅ | ✅ | |
-| BC5 | ✅ | ✅ | | 
-| BC6h | ✅ | ❌ | Decoding only at this time. Encoding is planned. | 
-| BC7 | ✅ | ❌ | Decoding only at this time. Encoding is planned. |
+| BC1 (S3TC DXT1) | ✅ | ✅ | BC1a is supported, any texel with alpha < 255 will be treated as fully transparent |
+| BC2 (S3TC DXT3) | ✅ | ✅ | |
+| BC3 (S3TC DXT5) | ✅ | ✅ | |
+| BC4 (RGTC1) | ✅ | ✅ | |
+| BC5 (RGTC1) | ✅ | ✅ | | 
+| BC6h (BPTC_FLOAT) | ✅ | ❌ | Decoding only at this time. Encoding is planned. | 
+| BC7 (BPTC)  | ✅ | ❌ | Decoding only at this time. Encoding is planned. |
 
 ## Current State
 Texzel is still very early in development and the API is not stable, the code is not particularly clean or efficient.
