@@ -7,7 +7,7 @@ const conversion = @import("../core/conversion.zig");
 
 const RGB16F = @import("../pixel_formats.zig").RGB16F;
 
-pub const BC6HBlock = extern struct {
+pub const BC6Block = extern struct {
     pub const texel_width = 4;
     pub const texel_height = 4;
     pub const texel_count = texel_width * texel_height;
@@ -18,7 +18,7 @@ pub const BC6HBlock = extern struct {
 
     data: [16]u8,
 
-    pub fn decodeBlock(self: *const BC6HBlock, options: DecodeOptions) ![texel_count]RGB16F {
+    pub fn decodeBlock(self: *const BC6Block, options: DecodeOptions) ![texel_count]RGB16F {
         var texels: [texel_count]RGB16F = @splat(RGB16F{});
 
         var buffer = std.io.fixedBufferStream(&self.data);
@@ -517,10 +517,10 @@ pub const BC6HBlock = extern struct {
 
             const unq = if (v == 0)
                 0
-            else if (v >= ((@as(i32, 1) << safe_bits) - 1))
+            else if (v >= ((@as(i32, 1) << safe_bits - 1) - 1))
                 0x7FFF
             else
-                ((v << 15) + 0x4000) >> safe_bits;
+                ((v << 15) + 0x4000) >> (safe_bits - 1);
 
             return if (s) -unq else unq;
         }
@@ -579,14 +579,14 @@ pub const BC6HBlock = extern struct {
     };
 };
 
-test "bc6h decompress" {
+test "bc6 decompress" {
     const Dimensions = @import("../core/Dimensions.zig");
     const helpers = @import("helpers.zig");
 
     const allocator = std.testing.allocator;
 
     {
-        const file = try std.fs.cwd().openFile("resources/night.bc6hu", .{ .mode = .read_only });
+        const file = try std.fs.cwd().openFile("resources/night.bc6u", .{ .mode = .read_only });
         defer file.close();
 
         const read_result = try file.readToEndAlloc(allocator, 1 << 20);
@@ -597,7 +597,7 @@ test "bc6h decompress" {
             .height = 512,
         };
 
-        const decompress_result = try helpers.decodeBlock(allocator, BC6HBlock, RGB16F, dimensions, read_result, .{ .is_signed = false });
+        const decompress_result = try helpers.decodeBlock(allocator, BC6Block, RGB16F, dimensions, read_result, .{ .is_signed = false });
         defer decompress_result.deinit();
 
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
@@ -608,7 +608,7 @@ test "bc6h decompress" {
     }
 
     {
-        const file = try std.fs.cwd().openFile("resources/night.bc6hs", .{ .mode = .read_only });
+        const file = try std.fs.cwd().openFile("resources/night.bc6s", .{ .mode = .read_only });
         defer file.close();
 
         const read_result = try file.readToEndAlloc(allocator, 1 << 20);
@@ -619,12 +619,12 @@ test "bc6h decompress" {
             .height = 512,
         };
 
-        const decompress_result = try helpers.decodeBlock(allocator, BC6HBlock, RGB16F, dimensions, read_result, .{ .is_signed = true });
+        const decompress_result = try helpers.decodeBlock(allocator, BC6Block, RGB16F, dimensions, read_result, .{ .is_signed = true });
         defer decompress_result.deinit();
 
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
 
-        const expected_hash = 0xE359EA22;
+        const expected_hash = 0x799A065C;
 
         try std.testing.expectEqual(expected_hash, hash);
     }

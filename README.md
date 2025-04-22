@@ -13,7 +13,7 @@ It is currently focused on the BCn codecs as well as converting between differen
 | BC3 (S3TC DXT5) | ✅ | ✅ | |
 | BC4 (RGTC1) | ✅ | ✅ | |
 | BC5 (RGTC1) | ✅ | ✅ | | 
-| BC6h (BPTC_FLOAT) | ✅ | ❌ | Decoding only at this time. Encoding is planned. | 
+| BC6 (BPTC_FLOAT) | ✅ | ❌ | Decoding only at this time. Encoding is planned. | 
 | BC7 (BPTC)  | ✅ | ❌ | Decoding only at this time. Encoding is planned. |
 
 ## Current State
