@@ -409,4 +409,26 @@ test "bc7 decompress" {
 
         try std.testing.expectEqual(expected_hash, hash);
     }
+
+    {
+        const file = try std.fs.cwd().openFile("resources/alpha_gradient.bc7", .{ .mode = .read_only });
+        defer file.close();
+
+        const read_result = try file.readToEndAlloc(allocator, 1 << 20);
+        defer allocator.free(read_result);
+
+        const dimensions = Dimensions{
+            .width = 960,
+            .height = 480,
+        };
+
+        const decompress_result = try helpers.decodeBlock(allocator, BC7Block, @import("../pixel_formats.zig").RGBA8U, dimensions, read_result, .{});
+        defer decompress_result.deinit();
+
+        const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
+
+        const expected_hash = 0x17F889DD;
+
+        try std.testing.expectEqual(expected_hash, hash);
+    }
 }
