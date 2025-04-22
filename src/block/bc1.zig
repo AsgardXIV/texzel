@@ -47,7 +47,7 @@ pub const BC1Block = extern struct {
             solved_colors[3] = helpers.mixStruct(solved_colors[0], solved_colors[1], 1, 2);
         } else {
             solved_colors[2] = helpers.mixStruct(solved_colors[0], solved_colors[1], 1, 1);
-            solved_colors[3] = RGBA8U{ .r = 0, .g = 0, .b = 0, .a = 0 };
+            solved_colors[3] = .{ .r = 0, .g = 0, .b = 0, .a = 0 };
         }
 
         var mapped: [texel_count]RGBA8U = undefined;
@@ -145,7 +145,7 @@ pub const BC1Block = extern struct {
             colors[3] = helpers.mixStruct(colors[0], colors[1], 1, 2);
         } else {
             colors[2] = helpers.mixStruct(colors[0], colors[1], 1, 1);
-            colors[3] = Color{ .r = 0, .g = 0, .b = 0 };
+            colors[3] = .{ .r = 0, .g = 0, .b = 0 };
         }
 
         return colors;
