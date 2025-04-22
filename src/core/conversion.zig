@@ -30,10 +30,8 @@ pub fn convertTexelsWithSwizzle(
     input: anytype,
     comptime SwizzleType: type,
 ) [input.len]ResultTexel {
-    var result: [input.len]ResultTexel = undefined;
-    for (input, 0..) |texel, i| {
-        result[i] = convertTexelWithSwizzle(texel, ResultTexel, SwizzleType);
-    }
+    const result: [input.len]ResultTexel = undefined;
+    convertTexelsDynamicWithSwizzle(ResultTexel, input, result, SwizzleType) catch unreachable;
     return result;
 }
 
@@ -66,6 +64,7 @@ pub fn convertTexelsDynamicWithSwizzle(
     comptime SwizzleType: type,
 ) !void {
     if (input.len != output.len) {
+        @branchHint(.unlikely);
         return error.LengthMismatch;
     }
 
