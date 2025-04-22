@@ -7,6 +7,8 @@ const texels = @import("../pixel_formats.zig");
 /// `ResultTexel` is the type of the resulting texels.
 /// `input` is the array of texels to be converted.
 ///
+/// Array length must be known at compile time. See `convertTexelsDynamic` for a dynamic version.
+///
 /// The function returns an array of converted texels of the same length as `input`.
 pub fn convertTexels(
     comptime ResultTexel: type,
@@ -20,6 +22,8 @@ pub fn convertTexels(
 /// `ResultTexel` is the type of the resulting texels.
 /// `input` is the array of texels to be converted.
 ///
+/// Array length must be known at compile time. See `convertTexelsDynamic` for a dynamic version.
+///
 /// The function returns an array of converted texels of the same length as `input`.
 pub fn convertTexelsWithSwizzle(
     comptime ResultTexel: type,
@@ -31,6 +35,43 @@ pub fn convertTexelsWithSwizzle(
         result[i] = convertTexelWithSwizzle(texel, ResultTexel, SwizzleType);
     }
     return result;
+}
+
+/// A version of `convertTexelWithSwizzle` that converts a dynamic array of texels.
+///
+/// `ResultTexel` is the type of the resulting texels.
+/// `input` is the array of texels to be converted.
+/// `output` is the array to store the converted texels.
+///
+/// The input and output arrays must have the same length.
+pub fn convertTexelsDynamic(
+    comptime ResultTexel: type,
+    input: anytype,
+    output: anytype,
+) !void {
+    return convertTexelsDynamicWithSwizzle(ResultTexel, input, output, struct {});
+}
+
+/// A version of `convertTexelWithSwizzle` that converts a dynamic array of texels with swizzle.
+///
+/// `ResultTexel` is the type of the resulting texels.
+/// `input` is the array of texels to be converted.
+/// `output` is the array to store the converted texels.
+///
+/// The input and output arrays must have the same length.
+pub fn convertTexelsDynamicWithSwizzle(
+    comptime ResultTexel: type,
+    input: anytype,
+    output: anytype,
+    comptime SwizzleType: type,
+) !void {
+    if (input.len != output.len) {
+        return error.LengthMismatch;
+    }
+
+    for (input, 0..) |texel, i| {
+        output[i] = convertTexelWithSwizzle(texel, ResultTexel, SwizzleType);
+    }
 }
 
 /// Converts a texel from one format to another, applying the chosen swizzle and preserving relative magnitudes appropriately.

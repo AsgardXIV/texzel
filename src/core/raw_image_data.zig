@@ -74,14 +74,26 @@ pub fn RawImageData(comptime InPixelFormat: type) type {
 
         // Convert the image data to a different texel type.
         //
-        // Uses `conversion.convertTexel` to convert each texel.
-        //
         // `allocator` is the allocator to use for the new image data.
         // `NewPixelFormat` is the type of texel to convert to.
         //
         // Returns a pointer to the new image data.
         // Caller is responsible for freeing the memory.
         pub fn convertTo(image_data: *Self, allocator: Allocator, comptime NewPixelFormat: type) !*RawImageData(NewPixelFormat) {
+            return image_data.convertToWithSwizzle(allocator, NewPixelFormat, struct {});
+        }
+
+        // Convert the image data to a different texel type with swizzle.
+        //
+        // Uses `conversion.convertTexels` to convert texels.
+        //
+        // `allocator` is the allocator to use for the new image data.
+        // `NewPixelFormat` is the type of texel to convert to.
+        // `SwizzleType` is the type of swizzle to use.
+        //
+        // Returns a pointer to the new image data.
+        // Caller is responsible for freeing the memory.
+        pub fn convertToWithSwizzle(image_data: *Self, allocator: Allocator, comptime NewPixelFormat: type, comptime SwizzleType: type) !*RawImageData(NewPixelFormat) {
             if (PixelFormat == NewPixelFormat) {
                 return Self.initFromBuffer(allocator, image_data.dimensions, image_data.asBuffer());
             }
@@ -89,9 +101,7 @@ pub fn RawImageData(comptime InPixelFormat: type) type {
             const new_image_data = try RawImageData(NewPixelFormat).init(allocator, image_data.dimensions);
             errdefer allocator.destroy(new_image_data);
 
-            for (0..new_image_data.data.len) |i| {
-                new_image_data.data[i] = conversion.convertTexel(image_data.data[i], NewPixelFormat);
-            }
+            try conversion.convertTexelsDynamicWithSwizzle(NewPixelFormat, image_data.data, new_image_data.data, SwizzleType);
 
             return new_image_data;
         }
