@@ -14,7 +14,7 @@ It is currently focused on the BCn codecs as well as converting between differen
 | BC4 (RGTC1) | ✅ | ✅ | |
 | BC5 (RGTC1) | ✅ | ✅ | | 
 | BC6 (BPTC_FLOAT) | ✅ | ❌ | Decoding only at this time. Encoding is planned. | 
-| BC7 (BPTC)  | ✅ | ❌ | Decoding only at this time. Encoding is planned. |
+| BC7 (BPTC)  | ✅ | ❌ | Encoding in progress. |
 
 ## Current State
 Texzel is still very early in development and the API is not stable, the code is not particularly clean or efficient.
