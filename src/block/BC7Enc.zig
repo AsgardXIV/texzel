@@ -101,6 +101,179 @@ pub fn compressBlock(encoder: *BC7Enc) void {
         encoder.encMode13();
         encoder.encMode7();
     }
+
+    if (encoder.settings.mode_selection[2] != 0) {
+        encoder.encMode45();
+    }
+}
+
+fn encMode45(encoder: *BC7Enc) void {
+    var best_candidate: Mode45Parameters = .{};
+    var best_err = encoder.best_err;
+
+    const channel0 = encoder.settings.mode45_channel0;
+    for (channel0..encoder.settings.channels) |p| {
+        const rot: u32 = @intCast(p);
+        encoder.encMode45Candidate(&best_candidate, &best_err, 4, rot, 0);
+        encoder.encMode45Candidate(&best_candidate, &best_err, 4, rot, 1);
+    }
+
+    // Mode 4
+    if (best_err < encoder.best_err) {
+        encoder.best_err = best_err;
+        encoder.encCodeMode45(&best_candidate, 4);
+    }
+
+    for (channel0..encoder.settings.channels) |p| {
+        encoder.encMode45Candidate(&best_candidate, &best_err, 4, @intCast(p), 0);
+        encoder.encMode45Candidate(&best_candidate, &best_err, 4, @intCast(p), 1);
+    }
+
+    // Mode 5
+    if (best_err < encoder.best_err) {
+        encoder.best_err = best_err;
+        encoder.encCodeMode45(&best_candidate, 5);
+    }
+}
+
+fn encMode45Candidate(encoder: *BC7Enc, best_candidate: *Mode45Parameters, best_err: *f32, mode: usize, rotation: u32, swap: u32) void {
+    var bits: u32 = 2;
+    var abits: u32 = 2;
+    var aepbits: u32 = 8;
+
+    if (mode == 4) {
+        abits = 3;
+        aepbits = 6;
+    }
+
+    if (swap == 1) {
+        bits = 3;
+        abits = 2;
+    }
+
+    var candidate_block: [64]f32 = @splat(0.0);
+
+    for (0..16) |k| {
+        for (0..3) |p| {
+            candidate_block[k + p * 16] = encoder.block[k + p * 16];
+        }
+
+        if (rotation < 3) {
+            // Apply channel rotation
+            if (encoder.settings.channels == 4) {
+                candidate_block[k + rotation * 16] = encoder.block[k + 3 * 16];
+            }
+
+            if (encoder.settings.channels == 3) {
+                candidate_block[k + rotation * 16] = 255.0;
+            }
+        }
+    }
+
+    var ep: [8]f32 = @splat(0.0);
+    blockSegment(&ep, &candidate_block, 0xFFFFFFFF, 3);
+
+    var qep: [8]i32 = @splat(0);
+    eqQuantDequant(&qep, &ep, mode, 3);
+
+    var qblock: [2]u32 = @splat(0);
+    var err = blockQuant(&qblock, &candidate_block, bits, &ep, 0, 3);
+
+    // Refine
+    const refine_iterations = encoder.settings.refine_iterations[mode];
+    for (0..refine_iterations) |_| {
+        optEndpoints(&ep, &candidate_block, bits, &qblock, 0xFFFFFFFF, 3);
+        eqQuantDequant(&qep, &ep, mode, 3);
+        err = blockQuant(&qblock, &candidate_block, bits, &ep, 0, 3);
+    }
+
+    var channel_data: [16]f32 = undefined;
+    for (0..16) |k| {
+        channel_data[k] = encoder.block[k + rotation * 16];
+    }
+
+    // Encoding selected channel
+    var aqep: [2]i32 = @splat(0);
+    var aqblock: [2]u32 = @splat(0);
+
+    err += encoder.optChannel(&aqblock, &aqep, &channel_data, abits, aepbits);
+
+    if (err < best_err.*) {
+        @memcpy(&best_candidate.qep, qep[0..8]);
+        @memcpy(&best_candidate.qblock, &qblock);
+        @memcpy(&best_candidate.aqblock, &aqblock);
+        @memcpy(&best_candidate.aqep, &aqep);
+        best_candidate.rotation = rotation;
+        best_candidate.swap = swap;
+        best_err.* = err;
+    }
+}
+
+fn encCodeMode45(encoder: *BC7Enc, params: *Mode45Parameters, mode: usize) void {
+    var qep = params.qep;
+    var qblock = params.qblock;
+    var aqep = params.aqep;
+    var aqblock = params.aqblock;
+    const rotation = params.rotation;
+    const swap = params.swap;
+
+    const bits: u32 = 2;
+    const abits: u32 = if (mode == 4) 3 else 2;
+    const epbits: u32 = if (mode == 4) 5 else 7;
+    const aepbits: u32 = if (mode == 4) 6 else 8;
+
+    if (swap == 0) {
+        encCodeApplySwapMode456(&qep, 4, &qblock, bits);
+        encCodeApplySwapMode456(&aqep, 1, &aqblock, bits);
+    } else {
+        std.mem.swap([2]u32, &qblock, &aqblock);
+
+        encCodeApplySwapMode456(&aqep, 1, &qblock, bits);
+        encCodeApplySwapMode456(&qep, 4, &aqblock, bits);
+    }
+
+    encoder.data = @splat(0);
+    var pos: u32 = 0;
+
+    // Mode 4-5
+    const safe_mode: u5 = @intCast(mode);
+    put_bits(&encoder.data, &pos, @intCast(mode + 1), @as(u32, 1) << safe_mode);
+
+    // Rotation
+    put_bits(&encoder.data, &pos, 2, (rotation + 1) & 3);
+
+    if (mode == 4) {
+        put_bits(&encoder.data, &pos, 1, swap);
+    }
+
+    // Endpoints
+    for (0..3) |p| {
+        put_bits(&encoder.data, &pos, epbits, @intCast(qep[p]));
+        put_bits(&encoder.data, &pos, epbits, @intCast(qep[4 + p]));
+    }
+
+    // Alpha endpoints
+    put_bits(&encoder.data, &pos, aepbits, @intCast(aqep[0]));
+    put_bits(&encoder.data, &pos, aepbits, @intCast(aqep[1]));
+
+    // Quantized values
+    encCodeQBlock(&encoder.data, &pos, &qblock, bits, 0);
+    encCodeQBlock(&encoder.data, &pos, &aqblock, abits, 0);
+}
+
+fn encCodeApplySwapMode456(qep: []i32, channels: u32, qblock: *[2]u32, bits: u32) void {
+    const safe_bits: u5 = @intCast(bits);
+    const levels: u32 = @as(u32, 1) << safe_bits;
+
+    if (qblock[0] & 15 > @divFloor(levels, 2)) {
+        for (0..channels) |p| {
+            std.mem.swap(i32, &qep[p], &qep[channels + p]);
+        }
+
+        for (qblock) |*value| {
+            value.* = (0x11111111 * (levels - 1)) - value.*;
+        }
+    }
 }
 
 fn encMode02(encoder: *BC7Enc) void {
@@ -463,6 +636,132 @@ fn optEndpoints(ep: []f32, block: *[64]f32, bits: u32, qblock: *[2]u32, mask: u3
             ep[4 + p] = ep[p];
         }
     }
+}
+
+fn optChannel(encoder: *BC7Enc, qblock: *[2]u32, qep: *[2]i32, channel_block: *[16]f32, bits: u32, epbits: u32) f32 {
+    var ep = [_]f32{ 255.0, 0.0 };
+
+    for (0..16) |k| {
+        ep[0] = @min(ep[0], channel_block[k]);
+        ep[1] = @max(ep[1], channel_block[k]);
+    }
+
+    channelQuantDequant(qep, &ep, epbits);
+
+    var err = channelOptQuant(qblock, channel_block, bits, &ep);
+
+    const refine_iterations = encoder.settings.refine_iterations_channel;
+    for (0..refine_iterations) |_| {
+        channelOptEndpoints(&ep, channel_block, bits, qblock);
+        channelQuantDequant(qep, &ep, epbits);
+        err = channelOptQuant(qblock, channel_block, bits, &ep);
+    }
+
+    return err;
+}
+
+fn channelQuantDequant(qep: *[2]i32, ep: *[2]f32, epbits: u32) void {
+    const safe_bits: u5 = @intCast(epbits);
+    const levels: i32 = @as(i32, 1) << safe_bits;
+
+    for (0..2) |i| {
+        const flevel: f32 = @floatFromInt(levels - 1);
+        const s = ep[i] / 255.0 * flevel + 0.5;
+        const v = @as(i32, @intFromFloat(s));
+        qep[i] = std.math.clamp(v, 0, levels - 1);
+        ep[i] = @floatFromInt(unpackToByte(qep[i], epbits));
+    }
+}
+
+fn channelOptEndpoints(ep: *[2]f32, channel_block: *[16]f32, bits: u32, qblock: *[2]u32) void {
+    const safe_bits: u5 = @intCast(bits);
+    const levels: i32 = @as(i32, 1) << safe_bits;
+    const alevels = @as(f32, @floatFromInt(levels - 1));
+
+    var atb1: f32 = 0.0;
+    var sum_q: f32 = 0.0;
+    var sum_qq: f32 = 0.0;
+    var sum: f32 = 0.0;
+
+    for (0..2) |k1| {
+        var qbits_shifted = qblock[k1];
+        for (0..8) |k2| {
+            const k = k1 * 8 + k2;
+            const q = @as(f32, @floatFromInt(qbits_shifted & 15));
+            qbits_shifted >>= 4;
+
+            const x = alevels - q;
+
+            sum_q += q;
+            sum_qq += q * q;
+
+            sum += channel_block[k];
+            atb1 += x * channel_block[k];
+        }
+    }
+
+    const atb2 = alevels * sum - atb1;
+
+    const cxx = 16.0 * (alevels * alevels) - 2.0 * alevels * sum_q + sum_qq;
+    const cyy = sum_qq;
+    const cxy = alevels * sum_q - sum_q;
+    const scale = alevels / (cxx * cyy + cxy * cxy);
+
+    ep[0] = (atb1 * cyy - atb2 * cxy) * scale;
+    ep[1] = (atb2 * cxx - atb1 * cxy) * scale;
+
+    ep[0] = std.math.clamp(ep[0], 0.0, 255.0);
+    ep[1] = std.math.clamp(ep[1], 0.0, 255.0);
+
+    if (@abs(cxx * cyy - cxy * cxy) < 0.001) {
+        ep[0] = sum / 16.0;
+        ep[1] = ep[0];
+    }
+}
+
+fn channelOptQuant(qblock: *[2]u32, channel_block: *[16]f32, bits: u32, ep: *[2]f32) f32 {
+    const safe_bits: u5 = @intCast(bits);
+    const levels: i32 = @as(i32, 1) << safe_bits;
+
+    qblock[0] = 0;
+    qblock[1] = 0;
+
+    var total_err: f32 = 0.0;
+
+    for (0..16) |k| {
+        const proj: f32 = (channel_block[k] - ep[0]) * (ep[1] - ep[0] + 0.001);
+
+        const flevels: f32 = @floatFromInt(levels - 1);
+        const q1: i32 = @intFromFloat(proj * flevels + 0.5);
+        const q1_clamped = std.math.clamp(q1, 1, levels - 1);
+
+        var err0: f32 = 0.0;
+        var err1: f32 = 0.0;
+
+        const w0 = getUnquantValue(bits, q1_clamped - 1);
+        const w1 = getUnquantValue(bits, q1_clamped);
+
+        const ep_0_i: i32 = @intFromFloat(ep[0]);
+        const ep_1_i: i32 = @intFromFloat(ep[1]);
+
+        const dec_v0_i: i32 = @divTrunc((64 - w0) * ep_0_i + w0 * ep_1_i + 32, 64);
+        const dec_v1_i: i32 = @divTrunc((64 - w1) * ep_0_i + w1 * ep_1_i + 32, 64);
+
+        const dec_v0: f32 = @floatFromInt(dec_v0_i);
+        const dec_v1: f32 = @floatFromInt(dec_v1_i);
+
+        err0 += (dec_v0 - channel_block[k]) * (dec_v0 - channel_block[k]);
+        err1 += (dec_v1 - channel_block[k]) * (dec_v1 - channel_block[k]);
+
+        const best_err = if (err0 < err1) err0 else err1;
+
+        const best_q = if (err0 < err1) q1_clamped - 1 else q1_clamped;
+
+        qblock[k / 8] |= @as(u32, @intCast(best_q)) << @intCast(4 * (k % 8));
+        total_err += best_err;
+    }
+
+    return total_err;
 }
 
 fn blockQuant(qblock: *[2]u32, block: *[64]f32, bits: u32, ep: []f32, pattern: u32, channels: u32) f32 {
@@ -1044,3 +1343,12 @@ fn partialSortList(list: []i32, length: usize, partial_count: u32) void {
         std.mem.swap(i32, &list[k], &list[best_idx]);
     }
 }
+
+const Mode45Parameters = struct {
+    qep: [8]i32 = @splat(0),
+    qblock: [2]u32 = @splat(0),
+    aqep: [2]i32 = @splat(0),
+    aqblock: [2]u32 = @splat(0),
+    rotation: u32 = 0,
+    swap: u32 = 0,
+};
