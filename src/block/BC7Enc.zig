@@ -99,6 +99,7 @@ pub fn compressBlock(encoder: *BC7Enc) void {
 
     if (encoder.settings.mode_selection[1] != 0) {
         encoder.encMode13();
+        encoder.encMode7();
     }
 }
 
@@ -137,6 +138,27 @@ fn encMode13(encoder: *BC7Enc) void {
     encoder.encMode01237(1, &part_list, encoder.settings.fast_skip_threshold_mode1);
 
     encoder.encMode01237(3, &part_list, encoder.settings.fast_skip_threshold_mode3);
+}
+
+fn encMode7(encoder: *BC7Enc) void {
+    if (encoder.settings.fast_skip_threshold_mode7 == 0) return;
+
+    var full_stats: [15]f32 = @splat(0.0);
+    computeStatsMasked(&full_stats, &encoder.block, 0xFFFFFFFF, encoder.settings.channels);
+
+    var part_list: [64]i32 = @splat(0);
+
+    for (0..64) |i| {
+        const part: i32 = @intCast(i);
+        const mask = getPatternMask(part, 0);
+        const bound12 = blockPcaBoundSplit(&encoder.block, mask, &full_stats, encoder.settings.channels);
+        const bound: i32 = @intFromFloat(bound12);
+        part_list[i] = part + bound * 64;
+    }
+
+    partialSortList(&part_list, 64, encoder.settings.fast_skip_threshold_mode7);
+
+    encoder.encMode01237(7, &part_list, encoder.settings.fast_skip_threshold_mode7);
 }
 
 fn encMode01237(
