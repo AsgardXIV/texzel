@@ -105,6 +105,64 @@ pub fn compressBlock(encoder: *BC7Enc) void {
     if (encoder.settings.mode_selection[2] != 0) {
         encoder.encMode45();
     }
+
+    if (encoder.settings.mode_selection[3] != 0) {
+        encoder.encMode6();
+    }
+}
+
+fn encMode6(encoder: *BC7Enc) void {
+    const mode: usize = 6;
+    const bits: u32 = 2;
+
+    var ep: [8]f32 = @splat(0.0);
+    blockSegment(&ep, &encoder.block, 0xFFFFFFFF, encoder.settings.channels);
+
+    if (encoder.settings.channels == 3) {
+        ep[3] = 255.0;
+        ep[7] = 255.0;
+    }
+
+    var qep: [8]i32 = @splat(0);
+    eqQuantDequant(&qep, &ep, mode, encoder.settings.channels);
+
+    var qblock: [2]u32 = @splat(0);
+    var err = blockQuant(&qblock, &encoder.block, bits, &ep, 0, encoder.settings.channels);
+
+    const refine_iterations = encoder.settings.refine_iterations[mode];
+    for (0..refine_iterations) |_| {
+        optEndpoints(&ep, &encoder.block, bits, &qblock, 0xFFFFFFFF, encoder.settings.channels);
+        eqQuantDequant(&qep, &ep, mode, encoder.settings.channels);
+        err = blockQuant(&qblock, &encoder.block, bits, &ep, 0, encoder.settings.channels);
+    }
+
+    if (err < encoder.best_err) {
+        encoder.best_err = err;
+        encoder.encCodeMode6(&qep, &qblock);
+    }
+}
+
+fn encCodeMode6(encoder: *BC7Enc, qep: *[8]i32, qblock: *[2]u32) void {
+    encCodeApplySwapMode456(qep, 4, qblock, 4);
+
+    encoder.data = @splat(0);
+    var pos: u32 = 0;
+
+    // Mode 6
+    put_bits(&encoder.data, &pos, 7, 64);
+
+    // Endpoints
+    for (0..4) |p| {
+        put_bits(&encoder.data, &pos, 7, @intCast(qep[p] >> 1));
+        put_bits(&encoder.data, &pos, 7, @intCast(qep[4 + p] >> 1));
+    }
+
+    // P bits
+    put_bits(&encoder.data, &pos, 1, @intCast(qep[0] & 1));
+    put_bits(&encoder.data, &pos, 1, @intCast(qep[4] & 1));
+
+    // Quantized values
+    encCodeQBlock(&encoder.data, &pos, qblock, 4, 0);
 }
 
 fn encMode45(encoder: *BC7Enc) void {
