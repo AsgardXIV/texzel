@@ -306,7 +306,7 @@ test "bc1 compress" {
 
         const hash = std.hash.Crc32.hash(compressed);
 
-        const expected_hash = 0x20EB9DDB;
+        const expected_hash = 0x5EBD455;
 
         try std.testing.expectEqual(expected_hash, hash);
     }

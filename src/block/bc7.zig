@@ -452,6 +452,33 @@ test "bc7 compress" {
     const helpers = @import("helpers.zig");
 
     {
+        const file = try std.fs.cwd().openFile("resources/ziggy.rgba", .{ .mode = .read_only });
+        defer file.close();
+
+        const read_result = try file.readToEndAlloc(allocator, 2 << 20);
+        defer allocator.free(read_result);
+
+        const dimensions = Dimensions{
+            .width = 512,
+            .height = 512,
+        };
+
+        const rgba_image = try RawImageData(RGBA8U).initFromBuffer(allocator, dimensions, read_result);
+        defer rgba_image.deinit();
+
+        const compressed = try helpers.encodeBlock(allocator, BC7Block, RGBA8U, rgba_image, .default);
+        defer allocator.free(compressed);
+
+        try @import("../utils/image.zig").writeDDS("zig-out/ziggy.dds", 512, 512, "BC7 ", compressed);
+
+        // const hash = std.hash.Crc32.hash(compressed);
+
+        // const expected_hash = 0x3C4E5EFB;
+
+        // try std.testing.expectEqual(expected_hash, hash);
+    }
+
+    {
         const file = try std.fs.cwd().openFile("resources/alpha_gradient.rgba", .{ .mode = .read_only });
         defer file.close();
 
@@ -466,9 +493,42 @@ test "bc7 compress" {
         const rgba_image = try RawImageData(RGBA8U).initFromBuffer(allocator, dimensions, read_result);
         defer rgba_image.deinit();
 
-        const compressed = try helpers.encodeBlock(allocator, BC7Block, RGBA8U, rgba_image, .default);
+        const compressed = try helpers.encodeBlock(allocator, BC7Block, RGBA8U, rgba_image, .alpha_slow);
         defer allocator.free(compressed);
 
-        try @import("../utils/image.zig").writeDDS("zig-out/test.dds", 960, 480, "BC7 ", compressed);
+        try @import("../utils/image.zig").writeDDS("zig-out/alpha_gradient.dds", 960, 480, "BC7 ", compressed);
+
+        // const hash = std.hash.Crc32.hash(compressed);
+
+        // const expected_hash = 0xEFB0D498;
+
+        // try std.testing.expectEqual(expected_hash, hash);
+    }
+
+    {
+        const file = try std.fs.cwd().openFile("resources/night.rgba", .{ .mode = .read_only });
+        defer file.close();
+
+        const read_result = try file.readToEndAlloc(allocator, 2 << 20);
+        defer allocator.free(read_result);
+
+        const dimensions = Dimensions{
+            .width = 1024,
+            .height = 512,
+        };
+
+        const rgba_image = try RawImageData(RGBA8U).initFromBuffer(allocator, dimensions, read_result);
+        defer rgba_image.deinit();
+
+        const compressed = try helpers.encodeBlock(allocator, BC7Block, RGBA8U, rgba_image, .opaque_slow);
+        defer allocator.free(compressed);
+
+        try @import("../utils/image.zig").writeDDS("zig-out/night.dds", 1024, 512, "BC7 ", compressed);
+
+        // const hash = std.hash.Crc32.hash(compressed);
+
+        // const expected_hash = 0x7DDF4492;
+
+        // try std.testing.expectEqual(expected_hash, hash);
     }
 }

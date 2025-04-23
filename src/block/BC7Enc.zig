@@ -18,7 +18,67 @@ pub const Settings = struct {
     refine_iterations_channel: u32,
     channels: u32,
 
-    pub const default = alpha_slow;
+    pub const default = alpha_basic;
+
+    pub const opaque_fast = Settings{
+        .channels = 3,
+        .mode_selection = .{ 0, 1, 0, 1 },
+        .skip_mode2 = 1,
+        .fast_skip_threshold_mode1 = 12,
+        .fast_skip_threshold_mode3 = 4,
+        .fast_skip_threshold_mode7 = 0,
+        .mode45_channel0 = 0,
+        .refine_iterations_channel = 0,
+        .refine_iterations = .{ 2, 2, 2, 1, 2, 2, 2, 0 },
+    };
+
+    pub const opaque_basic = Settings{
+        .channels = 3,
+        .mode_selection = .{ 1, 1, 1, 1 },
+        .skip_mode2 = 1,
+        .fast_skip_threshold_mode1 = 12,
+        .fast_skip_threshold_mode3 = 8,
+        .fast_skip_threshold_mode7 = 0,
+        .mode45_channel0 = 0,
+        .refine_iterations_channel = 2,
+        .refine_iterations = .{ 2, 2, 2, 2, 2, 2, 2, 0 },
+    };
+
+    pub const opaque_slow = Settings{
+        .channels = 3,
+        .mode_selection = .{ 1, 1, 1, 1 },
+        .skip_mode2 = 0,
+        .fast_skip_threshold_mode1 = 64,
+        .fast_skip_threshold_mode3 = 64,
+        .fast_skip_threshold_mode7 = 0,
+        .mode45_channel0 = 0,
+        .refine_iterations_channel = 4,
+        .refine_iterations = .{ 4, 4, 4, 4, 4, 4, 4, 0 },
+    };
+
+    pub const alpha_fast = Settings{
+        .channels = 4,
+        .mode_selection = .{ 0, 1, 1, 1 },
+        .skip_mode2 = 1,
+        .fast_skip_threshold_mode1 = 4,
+        .fast_skip_threshold_mode3 = 4,
+        .fast_skip_threshold_mode7 = 8,
+        .mode45_channel0 = 3,
+        .refine_iterations_channel = 2,
+        .refine_iterations = .{ 2, 1, 2, 1, 2, 2, 2, 2 },
+    };
+
+    pub const alpha_basic = Settings{
+        .channels = 4,
+        .mode_selection = .{ 1, 1, 1, 1 },
+        .skip_mode2 = 1,
+        .fast_skip_threshold_mode1 = 18,
+        .fast_skip_threshold_mode3 = 8,
+        .fast_skip_threshold_mode7 = 8,
+        .mode45_channel0 = 0,
+        .refine_iterations_channel = 2,
+        .refine_iterations = .{ 2, 2, 2, 2, 2, 2, 2, 2 },
+    };
 
     pub const alpha_slow = Settings{
         .channels = 4,
@@ -329,7 +389,7 @@ fn encCodeApplySwapMode456(qep: []i32, channels: u32, qblock: *[2]u32, bits: u32
         }
 
         for (qblock) |*value| {
-            value.* = (0x11111111 * (levels - 1)) - value.*;
+            value.* = @subWithOverflow(0x11111111 * (levels - 1), value.*)[0];
         }
     }
 }
@@ -680,8 +740,8 @@ fn optEndpoints(ep: []f32, block: *[64]f32, bits: u32, qblock: *[2]u32, mask: u3
 
     const cxx = sum[4] * (alevels * alevels) - 2.0 * alevels * sum_q + sum_qq;
     const cyy = sum_qq;
-    const cxy = alevels * sum_q - sum_q;
-    const scale = alevels / (cxx * cyy + cxy * cxy);
+    const cxy = alevels * sum_q - sum_qq;
+    const scale = alevels / (cxx * cyy - cxy * cxy);
 
     for (0..channels) |p| {
         ep[p] = (atb1[p] * cyy - atb2[p] * cxy) * scale;
@@ -762,8 +822,8 @@ fn channelOptEndpoints(ep: *[2]f32, channel_block: *[16]f32, bits: u32, qblock: 
 
     const cxx = 16.0 * (alevels * alevels) - 2.0 * alevels * sum_q + sum_qq;
     const cyy = sum_qq;
-    const cxy = alevels * sum_q - sum_q;
-    const scale = alevels / (cxx * cyy + cxy * cxy);
+    const cxy = alevels * sum_q - sum_qq;
+    const scale = alevels / (cxx * cyy - cxy * cxy);
 
     ep[0] = (atb1 * cyy - atb2 * cxy) * scale;
     ep[1] = (atb2 * cxx - atb1 * cxy) * scale;
