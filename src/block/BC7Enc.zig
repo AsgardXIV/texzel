@@ -96,6 +96,10 @@ pub fn compressBlock(encoder: *BC7Enc) void {
     if (encoder.settings.mode_selection[0] != 0) {
         encoder.encMode02();
     }
+
+    if (encoder.settings.mode_selection[1] != 0) {
+        encoder.encMode13();
+    }
 }
 
 fn encMode02(encoder: *BC7Enc) void {
@@ -109,6 +113,30 @@ fn encMode02(encoder: *BC7Enc) void {
     if (encoder.settings.skip_mode2 == 0) {
         encoder.encMode01237(2, &part_list, 64);
     }
+}
+
+fn encMode13(encoder: *BC7Enc) void {
+    if (encoder.settings.fast_skip_threshold_mode1 == 0 and encoder.settings.fast_skip_threshold_mode3 == 0) return;
+
+    var full_stats: [15]f32 = @splat(0.0);
+    computeStatsMasked(&full_stats, &encoder.block, 0xFFFFFFFF, 3);
+
+    var part_list: [64]i32 = @splat(0);
+
+    for (0..64) |i| {
+        const part: i32 = @intCast(i);
+        const mask = getPatternMask(part, 0);
+        const bound12 = blockPcaBoundSplit(&encoder.block, mask, &full_stats, 3);
+        const bound: i32 = @intFromFloat(bound12);
+        part_list[i] = part + bound * 64;
+    }
+
+    const partial_count: u32 = @max(encoder.settings.fast_skip_threshold_mode1, encoder.settings.fast_skip_threshold_mode3);
+    partialSortList(&part_list, 64, partial_count);
+
+    encoder.encMode01237(1, &part_list, encoder.settings.fast_skip_threshold_mode1);
+
+    encoder.encMode01237(3, &part_list, encoder.settings.fast_skip_threshold_mode3);
 }
 
 fn encMode01237(
@@ -695,6 +723,73 @@ fn blockPcaAxis(axis: *[4]f32, dc: *[4]f32, block: *[64]f32, mask: u32, channels
     computeAxis(axis, &covar, power_iterations, channels);
 }
 
+fn blockPcaBoundSplit(block: *[64]f32, mask: u32, full_stats: *[15]f32, channels: u32) f32 {
+    var stats: [15]f32 = @splat(0.0);
+    computeStatsMasked(&stats, block, mask, channels);
+
+    var covar1: [10]f32 = @splat(0.0);
+    covarFromStats(&covar1, &stats, channels);
+
+    for (0..15) |i| {
+        stats[i] = full_stats[i] - stats[i];
+    }
+
+    var covar2: [10]f32 = @splat(0.0);
+    covarFromStats(&covar2, &stats, channels);
+
+    var bound: f32 = 0.0;
+    bound += getPcaBound(&covar1, channels);
+    bound += getPcaBound(&covar2, channels);
+
+    return @sqrt(bound) * 256.0;
+}
+
+// Principal Component Analysis (PCA) bound
+fn getPcaBound(covar: *[10]f32, channels: u32) f32 {
+    const power_iterations: u32 = 4; // Quite approximative, but enough for bounding
+
+    var covar_scaled: [10]f32 = undefined;
+    @memcpy(&covar_scaled, covar);
+
+    const inv_var: f32 = 1.0 / (256.0 * 256.0);
+
+    for (&covar_scaled) |*scaled| {
+        scaled.* = inv_var;
+    }
+
+    const eps_var = @as(f32, @floatCast(0.001));
+    const eps: f32 = eps_var * eps_var;
+    covar[0] += eps;
+    covar[4] += eps;
+    covar[7] += eps;
+    covar[9] += eps;
+
+    var axis: [4]f32 = @splat(0.0);
+    computeAxis(&axis, &covar_scaled, power_iterations, channels);
+
+    var a_vec: [4]f32 = @splat(1.0);
+
+    if (channels == 3) {
+        ssymv3(&axis, covar, &a_vec);
+    } else {
+        ssymv4(&axis, covar, &a_vec);
+    }
+
+    var sq_sum: f32 = 0.0;
+    for (a_vec[0..channels]) |*item| {
+        sq_sum += item.* * item.*;
+    }
+    const lambda: f32 = @sqrt(sq_sum);
+
+    var bound: f32 = covar_scaled[0] + covar_scaled[4] + covar_scaled[7];
+    if (channels == 4) {
+        bound += covar_scaled[9];
+    }
+    bound -= lambda;
+
+    return @max(bound, 0.0);
+}
+
 fn computeAxis(axis: *[4]f32, covar: *[10]f32, power_iterations: u32, channels: u32) void {
     var a_vec: [4]f32 = @splat(1.0);
 
@@ -910,5 +1005,20 @@ fn data_shl_1bit_from(data: *[5]u32, from_bits: usize) void {
         const mask = ((@as(u32, 1) << (safe)) - 1) >> 1;
         data[3] = (mask & data[3]) | (~mask & shifted);
         data[4] >>= 1;
+    }
+}
+
+fn partialSortList(list: []i32, length: usize, partial_count: u32) void {
+    for (0..partial_count) |k| {
+        var best_idx: usize = k;
+        var best_value: i32 = list[k];
+        for (k + 1..length) |i| {
+            if (best_value > list[i]) {
+                best_value = list[i];
+                best_idx = i;
+            }
+        }
+
+        std.mem.swap(i32, &list[k], &list[best_idx]);
     }
 }
