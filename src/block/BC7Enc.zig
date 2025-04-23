@@ -229,6 +229,7 @@ fn encMode45(encoder: *BC7Enc) void {
     var best_candidate: Mode45Parameters = .{};
     var best_err = encoder.best_err;
 
+    // Mode 4
     const channel0 = encoder.settings.mode45_channel0;
     for (channel0..encoder.settings.channels) |p| {
         const rot: u32 = @intCast(p);
@@ -236,18 +237,17 @@ fn encMode45(encoder: *BC7Enc) void {
         encoder.encMode45Candidate(&best_candidate, &best_err, 4, rot, 1);
     }
 
-    // Mode 4
     if (best_err < encoder.best_err) {
         encoder.best_err = best_err;
         encoder.encCodeMode45(&best_candidate, 4);
     }
 
+    // Mode 5
     for (channel0..encoder.settings.channels) |p| {
-        encoder.encMode45Candidate(&best_candidate, &best_err, 4, @intCast(p), 0);
-        encoder.encMode45Candidate(&best_candidate, &best_err, 4, @intCast(p), 1);
+        encoder.encMode45Candidate(&best_candidate, &best_err, 5, @intCast(p), 0);
+        encoder.encMode45Candidate(&best_candidate, &best_err, 5, @intCast(p), 1);
     }
 
-    // Mode 5
     if (best_err < encoder.best_err) {
         encoder.best_err = best_err;
         encoder.encCodeMode45(&best_candidate, 5);
@@ -383,7 +383,7 @@ fn encCodeApplySwapMode456(qep: []i32, channels: u32, qblock: *[2]u32, bits: u32
     const safe_bits: u5 = @intCast(bits);
     const levels: u32 = @as(u32, 1) << safe_bits;
 
-    if (qblock[0] & 15 > @divFloor(levels, 2)) {
+    if (qblock[0] & 15 >= @divTrunc(levels, 2)) {
         for (0..channels) |p| {
             std.mem.swap(i32, &qep[p], &qep[channels + p]);
         }
@@ -847,9 +847,9 @@ fn channelOptQuant(qblock: *[2]u32, channel_block: *[16]f32, bits: u32, ep: *[2]
     var total_err: f32 = 0.0;
 
     for (0..16) |k| {
-        const proj: f32 = (channel_block[k] - ep[0]) * (ep[1] - ep[0] + 0.001);
+        const proj: f32 = (channel_block[k] - ep[0]) / (ep[1] - ep[0] + 0.001);
 
-        const flevels: f32 = @floatFromInt(levels - 1);
+        const flevels: f32 = @floatFromInt(levels);
         const q1: i32 = @intFromFloat(proj * flevels + 0.5);
         const q1_clamped = std.math.clamp(q1, 1, levels - 1);
 
@@ -862,7 +862,7 @@ fn channelOptQuant(qblock: *[2]u32, channel_block: *[16]f32, bits: u32, ep: *[2]
         const ep_0_i: i32 = @intFromFloat(ep[0]);
         const ep_1_i: i32 = @intFromFloat(ep[1]);
 
-        const dec_v0_i: i32 = @divTrunc((64 - w0) * ep_0_i + w0 * ep_1_i + 32, 64);
+        const dec_v0_i: i32 = @divTrunc((64 - w0) * ep_0_i + w0 * ep_0_i + 32, 64);
         const dec_v1_i: i32 = @divTrunc((64 - w1) * ep_0_i + w1 * ep_1_i + 32, 64);
 
         const dec_v0: f32 = @floatFromInt(dec_v0_i);
