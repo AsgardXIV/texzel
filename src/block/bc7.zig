@@ -7,12 +7,15 @@ const conversion = @import("../core/conversion.zig");
 
 const RGBA8U = @import("../pixel_formats.zig").RGBA8U;
 
+const BC7Enc = @import("BC7Enc.zig");
+
 pub const BC7Block = extern struct {
     pub const texel_width = 4;
     pub const texel_height = 4;
     pub const texel_count = texel_width * texel_height;
 
     pub const DecodeOptions = struct {};
+    pub const EncodeOptions = BC7Enc.Settings;
 
     data: [16]u8,
 
@@ -227,6 +230,13 @@ pub const BC7Block = extern struct {
         return texels;
     }
 
+    pub fn encodeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat, options: EncodeOptions) !BC7Block {
+        var encoder = BC7Enc.createEncoder(PixelFormat, raw_texels, options);
+        encoder.computeOpaqueError();
+        encoder.compressBlock();
+        return encoder.getBestBlock();
+    }
+
     fn interpolate(a: u32, b: u32, weights: []const u32, index: u32) u8 {
         const idx: usize = @intCast(index);
         const result = (a * (64 - weights[idx]) + b * weights[idx] + 32) >> 6;
@@ -428,6 +438,90 @@ test "bc7 decompress" {
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
 
         const expected_hash = 0x17F889DD;
+
+        try std.testing.expectEqual(expected_hash, hash);
+    }
+}
+
+test "bc7 compress" {
+    const RawImageData = @import("../core/raw_image_data.zig").RawImageData;
+    const Dimensions = @import("../core/Dimensions.zig");
+
+    const allocator = std.testing.allocator;
+
+    const helpers = @import("helpers.zig");
+
+    {
+        const file = try std.fs.cwd().openFile("resources/ziggy.rgba", .{ .mode = .read_only });
+        defer file.close();
+
+        const read_result = try file.readToEndAlloc(allocator, 2 << 20);
+        defer allocator.free(read_result);
+
+        const dimensions = Dimensions{
+            .width = 512,
+            .height = 512,
+        };
+
+        const rgba_image = try RawImageData(RGBA8U).initFromBuffer(allocator, dimensions, read_result);
+        defer rgba_image.deinit();
+
+        const compressed = try helpers.encodeBlock(allocator, BC7Block, RGBA8U, rgba_image, .default);
+        defer allocator.free(compressed);
+
+        const hash = std.hash.Crc32.hash(compressed);
+
+        const expected_hash = 0xA42C6082;
+
+        try std.testing.expectEqual(expected_hash, hash);
+    }
+
+    {
+        const file = try std.fs.cwd().openFile("resources/alpha_gradient.rgba", .{ .mode = .read_only });
+        defer file.close();
+
+        const read_result = try file.readToEndAlloc(allocator, 2 << 20);
+        defer allocator.free(read_result);
+
+        const dimensions = Dimensions{
+            .width = 960,
+            .height = 480,
+        };
+
+        const rgba_image = try RawImageData(RGBA8U).initFromBuffer(allocator, dimensions, read_result);
+        defer rgba_image.deinit();
+
+        const compressed = try helpers.encodeBlock(allocator, BC7Block, RGBA8U, rgba_image, .alpha_slow);
+        defer allocator.free(compressed);
+
+        const hash = std.hash.Crc32.hash(compressed);
+
+        const expected_hash = 0x15110A04;
+
+        try std.testing.expectEqual(expected_hash, hash);
+    }
+
+    {
+        const file = try std.fs.cwd().openFile("resources/night.rgba", .{ .mode = .read_only });
+        defer file.close();
+
+        const read_result = try file.readToEndAlloc(allocator, 2 << 20);
+        defer allocator.free(read_result);
+
+        const dimensions = Dimensions{
+            .width = 1024,
+            .height = 512,
+        };
+
+        const rgba_image = try RawImageData(RGBA8U).initFromBuffer(allocator, dimensions, read_result);
+        defer rgba_image.deinit();
+
+        const compressed = try helpers.encodeBlock(allocator, BC7Block, RGBA8U, rgba_image, .opaque_slow);
+        defer allocator.free(compressed);
+
+        const hash = std.hash.Crc32.hash(compressed);
+
+        const expected_hash = 0xCDD4112F;
 
         try std.testing.expectEqual(expected_hash, hash);
     }
