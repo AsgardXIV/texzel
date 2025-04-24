@@ -139,6 +139,7 @@ pub const BC4Block = extern struct {
 
 test "bc4 decompress" {
     const Dimensions = @import("../core/Dimensions.zig");
+    const texzel = @import("../texzel.zig");
 
     const allocator = std.testing.allocator;
 
@@ -154,7 +155,7 @@ test "bc4 decompress" {
             .height = 512,
         };
 
-        const decompress_result = try helpers.decodeBlock(allocator, BC4Block, R8U, dimensions, read_result, .{});
+        const decompress_result = try texzel.decode(allocator, .bc4, R8U, dimensions, read_result, .{});
         defer decompress_result.deinit();
 
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
@@ -168,6 +169,7 @@ test "bc4 decompress" {
 test "bc4 compress" {
     const Dimensions = @import("../core/Dimensions.zig");
     const RawImageData = @import("../core/raw_image_data.zig").RawImageData;
+    const texzel = @import("../texzel.zig");
 
     const allocator = std.testing.allocator;
 
@@ -186,7 +188,7 @@ test "bc4 compress" {
         const rgba_image = try RawImageData(R8U).initFromBuffer(allocator, dimensions, read_result);
         defer rgba_image.deinit();
 
-        const compressed = try helpers.encodeBlock(allocator, BC4Block, R8U, rgba_image, .{});
+        const compressed = try texzel.encode(allocator, .bc4, R8U, rgba_image, .{});
         defer allocator.free(compressed);
 
         const hash = std.hash.Crc32.hash(compressed);

@@ -50,7 +50,7 @@ pub const BC3Block = extern struct {
 
 test "bc3 decompress" {
     const Dimensions = @import("../core/Dimensions.zig");
-    const helpers = @import("helpers.zig");
+    const texzel = @import("../texzel.zig");
 
     const allocator = std.testing.allocator;
 
@@ -66,7 +66,7 @@ test "bc3 decompress" {
             .height = 512,
         };
 
-        const decompress_result = try helpers.decodeBlock(allocator, BC3Block, RGBA8U, dimensions, read_result, .{});
+        const decompress_result = try texzel.decode(allocator, .bc3, RGBA8U, dimensions, read_result, .{});
         defer decompress_result.deinit();
 
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
@@ -88,7 +88,7 @@ test "bc3 decompress" {
             .height = 480,
         };
 
-        const decompress_result = try helpers.decodeBlock(allocator, BC3Block, RGBA8U, dimensions, read_result, .{});
+        const decompress_result = try texzel.decode(allocator, .bc3, RGBA8U, dimensions, read_result, .{});
         defer decompress_result.deinit();
 
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
@@ -102,7 +102,7 @@ test "bc3 decompress" {
 test "bc3 compress" {
     const Dimensions = @import("../core/Dimensions.zig");
     const RawImageData = @import("../core/raw_image_data.zig").RawImageData;
-    const helpers = @import("helpers.zig");
+    const texzel = @import("../texzel.zig");
 
     const allocator = std.testing.allocator;
 
@@ -121,7 +121,7 @@ test "bc3 compress" {
         const rgba_image = try RawImageData(RGBA8U).initFromBuffer(allocator, dimensions, read_result);
         defer rgba_image.deinit();
 
-        const compressed = try helpers.encodeBlock(allocator, BC3Block, RGBA8U, rgba_image, .{});
+        const compressed = try texzel.encode(allocator, .bc3, RGBA8U, rgba_image, .{});
         defer allocator.free(compressed);
 
         const hash = std.hash.Crc32.hash(compressed);
@@ -146,7 +146,7 @@ test "bc3 compress" {
         const rgba_image = try RawImageData(RGBA8U).initFromBuffer(allocator, dimensions, read_result);
         defer rgba_image.deinit();
 
-        const compressed = try helpers.encodeBlock(allocator, BC3Block, RGBA8U, rgba_image, .{});
+        const compressed = try texzel.encode(allocator, .bc3, RGBA8U, rgba_image, .{});
         defer allocator.free(compressed);
 
         const hash = std.hash.Crc32.hash(compressed);

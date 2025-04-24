@@ -72,21 +72,21 @@ defer raw_image.deinit();
 // Compress to BC1
 const compressed_buffer = try texzel.encode(
     allocator,
-    texzel.block.bc1.BC1Block,
+    .bc1,
     texzel.pixel_formats.RGBA8U,
-    .{},
     raw_image,
+    .{},
 ); 
 defer allocator.free(compressed_buffer);
 
 // Decompress to RawImage but in BGRA8U this time
 const new_raw_image = try texzel.decode(
     allocator,
-    texzel.block.bc1.BC1Block,
+    .bc1,
     texzel.pixel_formats.BGRA8U,
     dimensions,
-    .{},
     compressed_buffer,
+    .{},
 );
 defer new_raw_image.deinit();
 

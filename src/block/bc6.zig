@@ -581,7 +581,7 @@ pub const BC6Block = extern struct {
 
 test "bc6 decompress" {
     const Dimensions = @import("../core/Dimensions.zig");
-    const helpers = @import("helpers.zig");
+    const texzel = @import("../texzel.zig");
 
     const allocator = std.testing.allocator;
 
@@ -597,7 +597,7 @@ test "bc6 decompress" {
             .height = 512,
         };
 
-        const decompress_result = try helpers.decodeBlock(allocator, BC6Block, RGB16F, dimensions, read_result, .{ .is_signed = false });
+        const decompress_result = try texzel.decode(allocator, .bc6, RGB16F, dimensions, read_result, .{ .is_signed = false });
         defer decompress_result.deinit();
 
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
@@ -619,7 +619,7 @@ test "bc6 decompress" {
             .height = 512,
         };
 
-        const decompress_result = try helpers.decodeBlock(allocator, BC6Block, RGB16F, dimensions, read_result, .{ .is_signed = true });
+        const decompress_result = try texzel.decode(allocator, .bc6, RGB16F, dimensions, read_result, .{ .is_signed = true });
         defer decompress_result.deinit();
 
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
