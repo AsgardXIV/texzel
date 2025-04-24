@@ -5,9 +5,11 @@ const std = @import("std");
 
 const conversion = @import("../core/conversion.zig");
 
-const RGB16F = @import("../pixel_formats.zig").RGB16F;
+const RGBA16F = @import("../pixel_formats.zig").RGBA16F;
 
 pub const BC6Block = extern struct {
+    pub const TexelFormat = RGBA16F;
+
     pub const texel_width = 4;
     pub const texel_height = 4;
     pub const texel_count = texel_width * texel_height;
@@ -18,8 +20,8 @@ pub const BC6Block = extern struct {
 
     data: [16]u8,
 
-    pub fn decodeBlock(self: *const BC6Block, options: DecodeOptions) ![texel_count]RGB16F {
-        var texels: [texel_count]RGB16F = @splat(RGB16F{});
+    pub fn decodeBlock(self: *const BC6Block, options: DecodeOptions) ![texel_count]TexelFormat {
+        var texels: [texel_count]TexelFormat = @splat(TexelFormat{});
 
         var buffer = std.io.fixedBufferStream(&self.data);
         var reader = std.io.bitReader(.little, buffer.reader().any());
@@ -597,12 +599,12 @@ test "bc6 decompress" {
             .height = 512,
         };
 
-        const decompress_result = try texzel.decode(allocator, .bc6, RGB16F, dimensions, read_result, .{ .is_signed = false });
+        const decompress_result = try texzel.decode(allocator, .bc6, RGBA16F, dimensions, read_result, .{ .is_signed = false });
         defer decompress_result.deinit();
 
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
 
-        const expected_hash = 0x674C47;
+        const expected_hash = 0x24F7A19D;
 
         try std.testing.expectEqual(expected_hash, hash);
     }
@@ -619,12 +621,12 @@ test "bc6 decompress" {
             .height = 512,
         };
 
-        const decompress_result = try texzel.decode(allocator, .bc6, RGB16F, dimensions, read_result, .{ .is_signed = true });
+        const decompress_result = try texzel.decode(allocator, .bc6, RGBA16F, dimensions, read_result, .{ .is_signed = true });
         defer decompress_result.deinit();
 
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
 
-        const expected_hash = 0x799A065C;
+        const expected_hash = 0xB52DE479;
 
         try std.testing.expectEqual(expected_hash, hash);
     }

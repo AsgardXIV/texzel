@@ -7,6 +7,8 @@ const bc1 = @import("bc1.zig");
 const RGBA8U = @import("../pixel_formats.zig").RGBA8U;
 
 pub const BC2Block = extern struct {
+    pub const TexelFormat = RGBA8U;
+
     pub const texel_width = 4;
     pub const texel_height = 4;
     pub const texel_count = texel_width * texel_height;
@@ -17,20 +19,20 @@ pub const BC2Block = extern struct {
     alpha: u64 align(1),
     bc1_block: bc1.BC1Block align(1),
 
-    pub fn decodeBlock(self: *const BC2Block, _: DecodeOptions) ![texel_count]RGBA8U {
+    pub fn decodeBlock(self: *const BC2Block, _: DecodeOptions) ![texel_count]TexelFormat {
         var texels = try self.bc1_block.decodeBlock(.{});
 
         var alpha_bits = self.alpha;
         inline for (0..texel_count) |i| {
             const alpha = @as(u4, @truncate(alpha_bits & 0b1111));
-            texels[i].a = conversion.scaleBitWidth(alpha, @FieldType(RGBA8U, "a"));
+            texels[i].a = conversion.scaleBitWidth(alpha, @FieldType(TexelFormat, "a"));
             alpha_bits >>= 4;
         }
 
         return texels;
     }
 
-    pub fn encodeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat, _: EncodeOptions) !BC2Block {
+    pub fn encodeBlock(raw_texels: [texel_count]TexelFormat, _: EncodeOptions) !BC2Block {
         var alpha_bits: u64 = 0;
         inline for (0..texel_count) |i| {
             const alpha4 = conversion.scaleBitWidth(raw_texels[i].a, u4);
@@ -39,7 +41,7 @@ pub const BC2Block = extern struct {
 
         return .{
             .alpha = alpha_bits,
-            .bc1_block = try bc1.BC1Block.encodeBlock(PixelFormat, raw_texels, .{ .allow_alpha = false }),
+            .bc1_block = try bc1.BC1Block.encodeBlock(raw_texels, .{ .allow_alpha = false }),
         };
     }
 };

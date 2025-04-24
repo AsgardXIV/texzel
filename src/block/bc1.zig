@@ -5,6 +5,8 @@ const helpers = @import("helpers.zig");
 const RGBA8U = @import("../pixel_formats.zig").RGBA8U;
 
 pub const BC1Block = extern struct {
+    pub const TexelFormat = RGBA8U;
+
     pub const texel_width = 4;
     pub const texel_height = 4;
     pub const texel_count = texel_width * texel_height;
@@ -31,12 +33,12 @@ pub const BC1Block = extern struct {
         a: u1,
     };
 
-    pub fn decodeBlock(self: *const BC1Block, _: DecodeOptions) ![texel_count]RGBA8U {
-        var solved_colors: [4]RGBA8U = undefined;
+    pub fn decodeBlock(self: *const BC1Block, _: DecodeOptions) ![texel_count]TexelFormat {
+        var solved_colors: [4]TexelFormat = undefined;
 
         inline for (0..2) |i| {
             const color = self.colors[i];
-            solved_colors[i] = conversion.convertTexel(color, RGBA8U);
+            solved_colors[i] = conversion.convertTexel(color, TexelFormat);
         }
 
         const color0_bits = @as(u16, @bitCast(self.colors[0]));
@@ -50,7 +52,7 @@ pub const BC1Block = extern struct {
             solved_colors[3] = .{ .r = 0, .g = 0, .b = 0, .a = 0 };
         }
 
-        var mapped: [texel_count]RGBA8U = undefined;
+        var mapped: [texel_count]TexelFormat = undefined;
         var index_bits = self.indices;
         inline for (0..texel_count) |i| {
             const index = @as(u2, @truncate(index_bits & 0b11));
@@ -61,7 +63,7 @@ pub const BC1Block = extern struct {
         return mapped;
     }
 
-    pub fn encodeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat, options: EncodeOptions) !BC1Block {
+    pub fn encodeBlock(raw_texels: [texel_count]TexelFormat, options: EncodeOptions) !BC1Block {
         // Quantize the texels to 5-6-5-1 format
         var texels: [texel_count]ColorWithAlphaBit = undefined;
         inline for (raw_texels, 0..) |texel, i| {

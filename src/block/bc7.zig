@@ -10,6 +10,8 @@ const RGBA8U = @import("../pixel_formats.zig").RGBA8U;
 const BC7Enc = @import("BC7Enc.zig");
 
 pub const BC7Block = extern struct {
+    pub const TexelFormat = RGBA8U;
+
     pub const texel_width = 4;
     pub const texel_height = 4;
     pub const texel_count = texel_width * texel_height;
@@ -19,8 +21,8 @@ pub const BC7Block = extern struct {
 
     data: [16]u8,
 
-    pub fn decodeBlock(self: *const BC7Block, _: DecodeOptions) ![texel_count]RGBA8U {
-        var texels: [texel_count]RGBA8U = @splat(RGBA8U{});
+    pub fn decodeBlock(self: *const BC7Block, _: DecodeOptions) ![texel_count]TexelFormat {
+        var texels: [texel_count]TexelFormat = @splat(TexelFormat{});
 
         var buffer = std.io.fixedBufferStream(&self.data);
         var reader = std.io.bitReader(.little, buffer.reader().any());
@@ -230,8 +232,8 @@ pub const BC7Block = extern struct {
         return texels;
     }
 
-    pub fn encodeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat, options: EncodeOptions) !BC7Block {
-        var encoder = BC7Enc.createEncoder(PixelFormat, raw_texels, options);
+    pub fn encodeBlock(raw_texels: [texel_count]TexelFormat, options: EncodeOptions) !BC7Block {
+        var encoder = BC7Enc.createEncoder(raw_texels, options);
         encoder.computeOpaqueError();
         encoder.compressBlock();
         return encoder.getBestBlock();

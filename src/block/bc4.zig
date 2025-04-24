@@ -6,6 +6,8 @@ const helpers = @import("helpers.zig");
 const R8U = @import("../pixel_formats.zig").R8U;
 
 pub const BC4Block = extern struct {
+    pub const TexelFormat = R8U;
+
     pub const texel_width = 4;
     pub const texel_height = 4;
     pub const texel_count = texel_width * texel_height;
@@ -17,8 +19,8 @@ pub const BC4Block = extern struct {
     endpoint1: u8 align(1),
     indices: [6]u8 align(1),
 
-    pub fn decodeBlock(self: *const BC4Block, _: DecodeOptions) ![texel_count]R8U {
-        var texels: [texel_count]R8U = @splat(R8U{});
+    pub fn decodeBlock(self: *const BC4Block, _: DecodeOptions) ![texel_count]TexelFormat {
+        var texels: [texel_count]TexelFormat = @splat(TexelFormat{});
 
         inline for (0..texel_count) |i| {
             const index = self.getIndex(i);
@@ -32,11 +34,11 @@ pub const BC4Block = extern struct {
         return texels;
     }
 
-    pub fn encodeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat, _: EncodeOptions) !BC4Block {
-        return computeBlock(PixelFormat, raw_texels);
+    pub fn encodeBlock(raw_texels: [texel_count]TexelFormat, _: EncodeOptions) !BC4Block {
+        return computeBlock(raw_texels);
     }
 
-    fn computeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat) BC4Block {
+    fn computeBlock(raw_texels: [texel_count]TexelFormat) BC4Block {
         var min_endpoint: u8 = 255;
         var max_endpoint: u8 = 0;
         var texel_values: [texel_count]u8 = undefined;

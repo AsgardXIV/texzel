@@ -56,27 +56,28 @@ pub fn encodeBlock(
 
     // We keep track of the last valid texel to handle padding
     // This reduces the impact of padding on the final image
-    var last_valid = PixelFormat{};
+    var last_valid = BlockType.TexelFormat{};
 
     for (0..block_dimensions.height) |by| {
         for (0..block_dimensions.width) |bx| {
             const block_index = by * block_dimensions.width + bx;
             const block_ptr = &compressed_data[block_index];
 
-            var texels: [BlockType.texel_count]PixelFormat = undefined;
+            var texels: [BlockType.texel_count]BlockType.TexelFormat = undefined;
             for (0..BlockType.texel_height) |y| {
                 for (0..BlockType.texel_width) |x| {
                     const global_x = bx * BlockType.texel_width + x;
                     const global_y = by * BlockType.texel_height + y;
                     const texel_idx = y * BlockType.texel_width + x;
                     if (global_x < image_data.dimensions.width and global_y < image_data.dimensions.height) {
-                        last_valid = image_data.data[global_y * image_data.dimensions.width + global_x];
+                        const pixel = image_data.data[global_y * image_data.dimensions.width + global_x];
+                        const texel = conversion.convertTexel(pixel, BlockType.TexelFormat);
+                        last_valid = texel;
                     }
                     texels[texel_idx] = last_valid;
                 }
             }
-
-            block_ptr.* = try BlockType.encodeBlock(PixelFormat, texels, options);
+            block_ptr.* = try BlockType.encodeBlock(texels, options);
         }
     }
 

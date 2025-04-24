@@ -8,6 +8,8 @@ const R8U = @import("../pixel_formats.zig").R8U;
 const RG8U = @import("../pixel_formats.zig").RG8U;
 
 pub const BC5Block = extern struct {
+    pub const TexelFormat = RG8U;
+
     pub const texel_width = 4;
     pub const texel_height = 4;
     pub const texel_count = texel_width * texel_height;
@@ -18,21 +20,21 @@ pub const BC5Block = extern struct {
     channel_0: bc4.BC4Block align(1),
     channel_1: bc4.BC4Block align(1),
 
-    pub fn decodeBlock(self: *const BC5Block, _: DecodeOptions) ![texel_count]RG8U {
+    pub fn decodeBlock(self: *const BC5Block, _: DecodeOptions) ![texel_count]TexelFormat {
         const channel0_texels = try self.channel_0.decodeBlock(.{});
         const channel1_texels = try self.channel_1.decodeBlock(.{});
 
-        var texels: [texel_count]RG8U = @splat(RG8U{});
+        var texels: [texel_count]TexelFormat = @splat(TexelFormat{});
 
         inline for (0..texel_count) |i| {
-            texels[i].r = conversion.scaleBitWidth(channel0_texels[i].r, @FieldType(RG8U, "r"));
-            texels[i].g = conversion.scaleBitWidth(channel1_texels[i].r, @FieldType(RG8U, "g"));
+            texels[i].r = conversion.scaleBitWidth(channel0_texels[i].r, @FieldType(TexelFormat, "r"));
+            texels[i].g = conversion.scaleBitWidth(channel1_texels[i].r, @FieldType(TexelFormat, "g"));
         }
 
         return texels;
     }
 
-    pub fn encodeBlock(comptime PixelFormat: type, raw_texels: [texel_count]PixelFormat, _: EncodeOptions) !BC5Block {
+    pub fn encodeBlock(raw_texels: [texel_count]TexelFormat, _: EncodeOptions) !BC5Block {
         // Copy and swizzle as needed
         var red_in_red: [texel_count]R8U = undefined;
         var green_in_red: [texel_count]R8U = undefined;
@@ -46,8 +48,8 @@ pub const BC5Block = extern struct {
 
         // Compress both blocks
         return .{
-            .channel_0 = try bc4.BC4Block.encodeBlock(R8U, red_in_red, .{}),
-            .channel_1 = try bc4.BC4Block.encodeBlock(R8U, green_in_red, .{}),
+            .channel_0 = try bc4.BC4Block.encodeBlock(red_in_red, .{}),
+            .channel_1 = try bc4.BC4Block.encodeBlock(green_in_red, .{}),
         };
     }
 };

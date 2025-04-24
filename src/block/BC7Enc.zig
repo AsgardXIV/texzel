@@ -99,7 +99,7 @@ data: [5]u32,
 opaque_err: f32,
 best_err: f32,
 
-pub fn createEncoder(comptime PixelFormat: type, raw_texels: [BC7Block.texel_count]PixelFormat, options: Settings) BC7Enc {
+pub fn createEncoder(raw_texels: [BC7Block.texel_count]BC7Block.TexelFormat, options: Settings) BC7Enc {
     var encoder = BC7Enc{
         .settings = options,
         .block = undefined,
