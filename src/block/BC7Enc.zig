@@ -173,7 +173,7 @@ pub fn compressBlock(encoder: *BC7Enc) void {
 
 fn encMode6(encoder: *BC7Enc) void {
     const mode: usize = 6;
-    const bits: u32 = 2;
+    const bits: u32 = 4;
 
     var ep: [8]f32 = @splat(0.0);
     blockSegment(&ep, &encoder.block, 0xFFFFFFFF, encoder.settings.channels);

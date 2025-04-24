@@ -496,7 +496,7 @@ test "bc7 compress" {
 
         const hash = std.hash.Crc32.hash(compressed);
 
-        const expected_hash = 0x46165723;
+        const expected_hash = 0xB33105EA;
 
         try std.testing.expectEqual(expected_hash, hash);
     }
@@ -521,7 +521,7 @@ test "bc7 compress" {
 
         const hash = std.hash.Crc32.hash(compressed);
 
-        const expected_hash = 0x7DF7D817;
+        const expected_hash = 0x2CCB3388;
 
         try std.testing.expectEqual(expected_hash, hash);
     }
