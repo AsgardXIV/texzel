@@ -47,15 +47,33 @@ pub fn RawImageData(comptime InPixelFormat: type) type {
         ///
         /// The height and width must be correct for the image in the buffer.
         pub fn initFromBuffer(allocator: Allocator, dimensions: Dimensions, buffer: []const u8) !*Self {
+            const pixel_count = dimensions.size();
+            const bytes_needed = pixel_count * @sizeOf(PixelFormat);
+
+            if (buffer.len < bytes_needed) {
+                @branchHint(.unlikely);
+                return error.SourceTooSmall;
+            }
+
             const image_data = try allocator.create(Self);
             errdefer allocator.destroy(image_data);
 
-            const slice = std.mem.bytesAsSlice(PixelFormat, buffer);
+            const pixels = try allocator.alloc(PixelFormat, pixel_count);
+            errdefer allocator.free(pixels);
+
+            const slice = std.mem.sliceAsBytes(pixels);
+
+            if (slice.len < bytes_needed) {
+                @branchHint(.unlikely);
+                return error.TargetTooSmall;
+            }
+
+            @memcpy(slice, buffer[0..bytes_needed]);
 
             image_data.* = .{
                 .allocator = allocator,
                 .dimensions = dimensions,
-                .data = try allocator.dupe(PixelFormat, slice),
+                .data = pixels,
             };
 
             return image_data;
