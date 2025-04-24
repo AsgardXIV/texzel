@@ -58,8 +58,8 @@ pub fn encodeBlock(
     // This reduces the impact of padding on the final image
     var last_valid = PixelFormat{};
 
-    for (0..block_dimensions.width) |bx| {
-        for (0..block_dimensions.height) |by| {
+    for (0..block_dimensions.height) |by| {
+        for (0..block_dimensions.width) |bx| {
             const block_index = by * block_dimensions.width + bx;
             const block_ptr = &compressed_data[block_index];
 

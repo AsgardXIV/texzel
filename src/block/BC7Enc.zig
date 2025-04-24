@@ -229,8 +229,9 @@ fn encMode45(encoder: *BC7Enc) void {
     var best_candidate: Mode45Parameters = .{};
     var best_err = encoder.best_err;
 
-    // Mode 4
     const channel0 = encoder.settings.mode45_channel0;
+
+    // Mode 4
     for (channel0..encoder.settings.channels) |p| {
         const rot: u32 = @intCast(p);
         encoder.encMode45Candidate(&best_candidate, &best_err, 4, rot, 0);
@@ -245,7 +246,6 @@ fn encMode45(encoder: *BC7Enc) void {
     // Mode 5
     for (channel0..encoder.settings.channels) |p| {
         encoder.encMode45Candidate(&best_candidate, &best_err, 5, @intCast(p), 0);
-        encoder.encMode45Candidate(&best_candidate, &best_err, 5, @intCast(p), 1);
     }
 
     if (best_err < encoder.best_err) {
@@ -255,18 +255,23 @@ fn encMode45(encoder: *BC7Enc) void {
 }
 
 fn encMode45Candidate(encoder: *BC7Enc, best_candidate: *Mode45Parameters, best_err: *f32, mode: usize, rotation: u32, swap: u32) void {
+    // Mode 5 defaults
     var bits: u32 = 2;
     var abits: u32 = 2;
     var aepbits: u32 = 8;
 
+    // Mode 4 overrides
     if (mode == 4) {
-        abits = 3;
         aepbits = 6;
-    }
 
-    if (swap == 1) {
-        bits = 3;
-        abits = 2;
+        if (swap == 1) {
+            bits = 3;
+            abits = 2;
+        } else {
+            abits = 3;
+        }
+    } else {
+        std.debug.assert(swap == 0);
     }
 
     var candidate_block: [64]f32 = @splat(0.0);
@@ -342,12 +347,12 @@ fn encCodeMode45(encoder: *BC7Enc, params: *Mode45Parameters, mode: usize) void 
 
     if (swap == 0) {
         encCodeApplySwapMode456(&qep, 4, &qblock, bits);
-        encCodeApplySwapMode456(&aqep, 1, &aqblock, bits);
+        encCodeApplySwapMode456(&aqep, 1, &aqblock, abits);
     } else {
         std.mem.swap([2]u32, &qblock, &aqblock);
 
         encCodeApplySwapMode456(&aqep, 1, &qblock, bits);
-        encCodeApplySwapMode456(&qep, 4, &aqblock, bits);
+        encCodeApplySwapMode456(&qep, 4, &aqblock, abits);
     }
 
     encoder.data = @splat(0);
@@ -862,7 +867,7 @@ fn channelOptQuant(qblock: *[2]u32, channel_block: *[16]f32, bits: u32, ep: *[2]
         const ep_0_i: i32 = @intFromFloat(ep[0]);
         const ep_1_i: i32 = @intFromFloat(ep[1]);
 
-        const dec_v0_i: i32 = @divTrunc((64 - w0) * ep_0_i + w0 * ep_0_i + 32, 64);
+        const dec_v0_i: i32 = @divTrunc((64 - w0) * ep_0_i + w0 * ep_1_i + 32, 64);
         const dec_v1_i: i32 = @divTrunc((64 - w1) * ep_0_i + w1 * ep_1_i + 32, 64);
 
         const dec_v0: f32 = @floatFromInt(dec_v0_i);
