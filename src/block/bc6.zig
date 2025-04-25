@@ -7,6 +7,8 @@ const conversion = @import("../core/conversion.zig");
 
 const RGBA16F = @import("../pixel_formats.zig").RGBA16F;
 
+const BC6Enc = @import("BC6Enc.zig");
+
 pub const BC6Block = extern struct {
     pub const TexelFormat = RGBA16F;
 
@@ -17,6 +19,8 @@ pub const BC6Block = extern struct {
     pub const DecodeOptions = struct {
         is_signed: bool = false,
     };
+
+    pub const EncodeOptions = BC6Enc.Settings;
 
     data: [16]u8,
 
@@ -456,6 +460,13 @@ pub const BC6Block = extern struct {
         return texels;
     }
 
+    pub fn encodeBlock(raw_texels: [texel_count]TexelFormat, options: EncodeOptions) !BC6Block {
+        var encoder = BC6Enc.createEncoder(raw_texels, options);
+        encoder.setupEncoder();
+        encoder.compressBlock();
+        return encoder.getBestBlock();
+    }
+
     fn extend_sign(val: i32, bits: i32) i32 {
         // http://graphics.stanford.edu/~seander/bithacks.html#VariableSignExtend
 
@@ -627,6 +638,39 @@ test "bc6 decompress" {
         const hash = std.hash.Crc32.hash(decompress_result.asBuffer());
 
         const expected_hash = 0xB52DE479;
+
+        try std.testing.expectEqual(expected_hash, hash);
+    }
+}
+
+test "bc6 compress" {
+    const RawImageData = @import("../core/raw_image_data.zig").RawImageData;
+    const Dimensions = @import("../core/Dimensions.zig");
+    const texzel = @import("../texzel.zig");
+
+    const allocator = std.testing.allocator;
+
+    {
+        const file = try std.fs.cwd().openFile("resources/night.rgba16f", .{ .mode = .read_only });
+        defer file.close();
+
+        const read_result = try file.readToEndAlloc(allocator, 10 << 20);
+        defer allocator.free(read_result);
+
+        const dimensions = Dimensions{
+            .width = 1024,
+            .height = 512,
+        };
+
+        const rgba_image = try RawImageData(RGBA16F).initFromBuffer(allocator, dimensions, read_result);
+        defer rgba_image.deinit();
+
+        const compressed = try texzel.encode(allocator, .bc6, RGBA16F, rgba_image, .default);
+        defer allocator.free(compressed);
+
+        const hash = std.hash.Crc32.hash(compressed);
+
+        const expected_hash = 0x530BF497;
 
         try std.testing.expectEqual(expected_hash, hash);
     }

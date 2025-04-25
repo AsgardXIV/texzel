@@ -119,6 +119,17 @@ pub fn writeDDS(filename: []const u8, width: u32, height: u32, four_cc: []const 
         };
     }
 
+    if (std.mem.eql(u8, "BC6U", four_cc)) {
+        header.pf_fourcc = @bitCast(@as([4]u8, "DX10"[0..4].*));
+        dx10header = DDSHeaderDXT10{
+            .dxgi_format = 95,
+            .resource_dimension = 3,
+            .misc_flag = 0,
+            .array_size = 1,
+            .misc_flags2 = 0,
+        };
+    }
+
     if (std.mem.eql(u8, "RG  ", four_cc)) {
         header.pf_fourcc = 0;
         header.pf_rgb_bitcount = 16;
