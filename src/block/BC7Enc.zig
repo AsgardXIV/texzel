@@ -640,8 +640,7 @@ fn optChannel(encoder: *BC7Enc, qblock: *[2]u32, qep: *[2]i32, channel_block: *[
 }
 
 fn channelQuantDequant(qep: *[2]i32, ep: *[2]f32, epbits: u32) void {
-    const safe_bits: u5 = @intCast(epbits);
-    const levels: i32 = @as(i32, 1) << safe_bits;
+    const levels = std.math.shl(i32, 1, epbits);
 
     for (0..2) |i| {
         const flevel: f32 = @floatFromInt(levels - 1);
@@ -653,8 +652,7 @@ fn channelQuantDequant(qep: *[2]i32, ep: *[2]f32, epbits: u32) void {
 }
 
 fn channelOptEndpoints(ep: *[2]f32, channel_block: *[16]f32, bits: u32, qblock: *[2]u32) void {
-    const safe_bits: u5 = @intCast(bits);
-    const levels: i32 = @as(i32, 1) << safe_bits;
+    const levels = std.math.shl(i32, 1, bits);
     const alevels = @as(f32, @floatFromInt(levels - 1));
 
     var atb1: f32 = 0.0;
@@ -699,8 +697,7 @@ fn channelOptEndpoints(ep: *[2]f32, channel_block: *[16]f32, bits: u32, qblock: 
 }
 
 fn channelOptQuant(qblock: *[2]u32, channel_block: *[16]f32, bits: u32, ep: *[2]f32) f32 {
-    const safe_bits: u5 = @intCast(bits);
-    const levels: i32 = @as(i32, 1) << safe_bits;
+    const levels = std.math.shl(i32, 1, bits);
 
     qblock[0] = 0;
     qblock[1] = 0;
@@ -783,8 +780,7 @@ fn epQuant(qep: []i32, ep: []f32, mode: usize, channels: u32) void {
 
 fn epQuant245(qep: []i32, ep: []f32, mode: usize) void {
     const bits: u32 = if (mode == 5) 7 else 5;
-    const safe_bits: u5 = @intCast(bits);
-    const levels: i32 = @as(i32, 1) << safe_bits;
+    const levels = std.math.shl(i32, 1, bits);
 
     for (0..8) |i| {
         const flevel: f32 = @floatFromInt(levels - 1);
@@ -880,9 +876,8 @@ fn blockSegment(ep: []f32, block: *[64]f32, mask: u32, channels: u32) void {
 }
 
 fn unpackToByte(v: i32, bits: u32) i32 {
-    const safe_bits: u5 = @intCast(bits);
-    const vv = v << (8 - safe_bits);
-    return vv + (vv >> safe_bits);
+    const vv = std.math.shl(i32, v, 8 - bits);
+    return vv + std.math.shr(i32, vv, bits);
 }
 
 const Mode45Parameters = struct {

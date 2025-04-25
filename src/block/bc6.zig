@@ -471,16 +471,14 @@ pub const BC6Block = extern struct {
         // http://graphics.stanford.edu/~seander/bithacks.html#VariableSignExtend
 
         const shift_amount = 32 - bits;
-        const shift_amount_safe = @as(u5, @intCast(shift_amount));
-        return (val << shift_amount_safe) >> shift_amount_safe;
+        return std.math.shr(i32, std.math.shl(i32, val, shift_amount), shift_amount);
     }
 
     fn transform_inverse(val: i32, a0: i32, bits: i32, is_signed: bool) i32 {
         // If the precision of A0 is "p" bits, then the transform algorithm is:
         // B0 = (B0 + A0) & ((1 << p) - 1)
 
-        const safe_bits = @as(u5, @intCast(bits));
-        const bit_mask = (@as(i32, 1) << safe_bits) - 1;
+        const bit_mask = std.math.shl(i32, 1, bits) - 1;
         const transformed = (val + a0) & bit_mask;
 
         return if (is_signed)
@@ -510,17 +508,15 @@ pub const BC6Block = extern struct {
     }
 
     fn unquantize(val: i32, bits: i32, is_signed: bool) i32 {
-        const safe_bits = @as(u5, @intCast(bits));
-
         if (!is_signed) {
             if (bits >= 15) {
                 return val;
             } else if (val == 0) {
                 return 0;
-            } else if (val == (@as(i32, 1) << safe_bits) - 1) {
+            } else if (val == std.math.shl(i32, 1, bits) - 1) {
                 return 0xFFFF;
             } else {
-                return ((val << 16) + 0x8000) >> safe_bits;
+                return std.math.shr(i32, (val << 16) + 0x8000, bits);
             }
         } else if (bits >= 16) {
             return val;
@@ -530,10 +526,10 @@ pub const BC6Block = extern struct {
 
             const unq = if (v == 0)
                 0
-            else if (v >= ((@as(i32, 1) << safe_bits - 1) - 1))
+            else if (v >= std.math.shl(i32, 1, bits - 1) - 1)
                 0x7FFF
             else
-                ((v << 15) + 0x4000) >> (safe_bits - 1);
+                std.math.shr(i32, (v << 15) + 0x4000, bits - 1);
 
             return if (s) -unq else unq;
         }

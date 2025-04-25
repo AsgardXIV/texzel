@@ -4,8 +4,7 @@
 const std = @import("std");
 
 pub fn blockQuant(qblock: *[2]u32, block: *[64]f32, bits: u32, ep: []f32, pattern: u32, channels: u32) f32 {
-    const safe_bits: u5 = @intCast(bits);
-    const levels: i32 = @as(i32, 1) << safe_bits;
+    const levels = std.math.shl(i32, 1, bits);
 
     var total_err: f32 = 0.0;
 
@@ -291,8 +290,7 @@ pub fn computeAxis(axis: *[4]f32, covar: *[10]f32, power_iterations: u32, channe
 }
 
 pub fn optEndpoints(ep: []f32, block: *[64]f32, bits: u32, qblock: *[2]u32, mask: u32, channels: u32) void {
-    const safe_bits: u5 = @intCast(bits);
-    const levels: i32 = @as(i32, 1) << safe_bits;
+    const levels = std.math.shl(i32, 1, bits);
     const alevels = @as(f32, @floatFromInt(levels - 1));
 
     var atb1: [4]f32 = @splat(0.0);
@@ -423,8 +421,7 @@ pub fn getPatternMask(part_id: i32, j: u32) u32 {
 }
 
 pub fn bc7CodeApplySwapMode456(qep: []i32, channels: u32, qblock: *[2]u32, bits: u32) void {
-    const safe_bits: u5 = @intCast(bits);
-    const levels: u32 = @as(u32, 1) << safe_bits;
+    const levels = std.math.shl(u32, 1, bits);
 
     if (qblock[0] & 15 >= @divTrunc(levels, 2)) {
         for (0..channels) |p| {
@@ -443,8 +440,7 @@ pub fn bc7CodeApplySwapMode01237(qep: *[24]i32, qblock: *[2]u32, mode: usize, pa
 
     var flips: u32 = 0;
 
-    const safe_bits: u5 = @intCast(bits);
-    const levels: i32 = @as(i32, 1) << safe_bits;
+    const levels = std.math.shl(i32, 1, bits);
 
     const skips = getSkips(part_id);
 
@@ -469,8 +465,7 @@ pub fn bc7CodeApplySwapMode01237(qep: *[24]i32, qblock: *[2]u32, mode: usize, pa
 }
 
 pub fn bc7CodeQBlock(data: *[5]u32, pos: *u32, qblock: *[2]u32, bits: u32, flips: u32) void {
-    const safe_bits: u5 = @intCast(bits);
-    const levels: u32 = @as(u32, 1) << safe_bits;
+    const levels = std.math.shl(u32, 1, bits);
 
     var flips_shifted = flips;
 

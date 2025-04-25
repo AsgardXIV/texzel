@@ -399,8 +399,7 @@ fn computeQBoundsCore(encoder: *BC6Enc, rgb_span: [3]f32) void {
 }
 
 fn epQuantBC6(qep: *[24]i32, ep: *[24]f32, bits: u32, pairs: u32) void {
-    const safe_bits: u5 = @intCast(bits);
-    const levels = @as(i32, 1) << safe_bits;
+    const levels = std.math.shl(i32, 1, bits);
 
     const flevels = @as(f32, @floatFromInt(levels - 1));
 
@@ -432,9 +431,7 @@ fn epQuantDequantBC6(encoder: *BC6Enc, qep: *[24]i32, ep: *[24]f32, pairs: u32) 
 }
 
 fn epQuantBC6H8(encoder: *BC6Enc, ep: *[8]f32, bits: u32, pairs: u32) void {
-    const safe_bits: u5 = @intCast(bits);
-    const levels = @as(i32, 1) << safe_bits;
-
+    const levels = std.math.shl(i32, 1, bits);
     const flevels = @as(f32, @floatFromInt(levels - 1));
 
     for (0..8 * pairs) |i| {
@@ -792,17 +789,15 @@ fn unpackToUF16(v: u32, bits: u32) u32 {
         return v;
     }
 
-    const safe_bits: u5 = @intCast(bits);
-
     if (v == 0) {
         return 0;
     }
 
-    if (v == (@as(u32, 1) << safe_bits) - 1) {
+    if (v == std.math.shl(u32, 1, bits) - 1) {
         return 0xFFFF;
     }
 
-    return (v * 2 + 1) << (15 - safe_bits);
+    return std.math.shl(u32, v * 2 + 1, 15 - bits);
 }
 
 fn getModeBits(mode: usize) u32 {
