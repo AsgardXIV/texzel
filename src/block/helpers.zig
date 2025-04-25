@@ -33,7 +33,11 @@ pub fn decodeBlock(
                         const texel = texels[block_texel_idx];
 
                         const texel_idx = global_y * image_data.dimensions.width + global_x;
-                        image_data.data[texel_idx] = conversion.convertTexel(texel, PixelFormat);
+                        if (BlockType.TexelFormat == PixelFormat) {
+                            image_data.data[texel_idx] = texel;
+                        } else {
+                            image_data.data[texel_idx] = conversion.convertTexel(texel, PixelFormat);
+                        }
                     }
                 }
             }
@@ -71,7 +75,12 @@ pub fn encodeBlock(
                     const texel_idx = y * BlockType.texel_width + x;
                     if (global_x < image_data.dimensions.width and global_y < image_data.dimensions.height) {
                         const pixel = image_data.data[global_y * image_data.dimensions.width + global_x];
-                        const texel = conversion.convertTexel(pixel, BlockType.TexelFormat);
+
+                        const texel = if (BlockType.TexelFormat == PixelFormat)
+                            pixel
+                        else
+                            conversion.convertTexel(pixel, BlockType.TexelFormat);
+
                         last_valid = texel;
                     }
                     texels[texel_idx] = last_valid;

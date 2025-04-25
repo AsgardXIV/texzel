@@ -41,4 +41,35 @@ pub fn build(b: *std.Build) void {
 
     const texzel_docs_step = b.step("docs", "Install docs");
     texzel_docs_step.dependOn(&texzel_docs.step);
+
+    // Benchmarks
+    const texzel_bench_exe_mod = b.createModule(.{
+        .root_source_file = b.path("src/bench.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{
+                .name = "texzel",
+                .module = texzel_lib_mod,
+            },
+        },
+    });
+
+    const texzel_bench_exe = b.addExecutable(.{
+        .name = "texzel_bench",
+        .root_module = texzel_bench_exe_mod,
+    });
+
+    const texzel_bench_run_cmd = b.addRunArtifact(texzel_bench_exe);
+
+    texzel_bench_run_cmd.step.dependOn(b.getInstallStep());
+
+    if (b.args) |args| {
+        texzel_bench_run_cmd.addArgs(args);
+    }
+
+    const texzel_bench_step = b.step("bench", "Run the Texzel benchmarks");
+    texzel_bench_step.dependOn(&texzel_bench_run_cmd.step);
+
+    b.installArtifact(texzel_bench_exe);
 }
