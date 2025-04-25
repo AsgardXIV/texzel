@@ -670,6 +670,31 @@ test "bc6 compress" {
 
         const hash = std.hash.Crc32.hash(compressed);
 
+        const expected_hash = 0xBFA36F5D;
+
+        try std.testing.expectEqual(expected_hash, hash);
+    }
+
+    {
+        const file = try std.fs.cwd().openFile("resources/night.rgba16f", .{ .mode = .read_only });
+        defer file.close();
+
+        const read_result = try file.readToEndAlloc(allocator, 10 << 20);
+        defer allocator.free(read_result);
+
+        const dimensions = Dimensions{
+            .width = 1024,
+            .height = 512,
+        };
+
+        const rgba_image = try RawImageData(RGBA16F).initFromBuffer(allocator, dimensions, read_result);
+        defer rgba_image.deinit();
+
+        const compressed = try texzel.encode(allocator, .bc6, RGBA16F, rgba_image, .slow);
+        defer allocator.free(compressed);
+
+        const hash = std.hash.Crc32.hash(compressed);
+
         const expected_hash = 0x530BF497;
 
         try std.testing.expectEqual(expected_hash, hash);

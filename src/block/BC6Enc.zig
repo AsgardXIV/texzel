@@ -15,9 +15,25 @@ pub const Settings = struct {
     refine_iterations_1p: u32,
     refine_iterations_2p: u32,
 
-    pub const default = very_slow;
+    pub const default = basic;
 
-    pub const very_slow = Settings{
+    pub const fast = Settings{
+        .slow_mode = 0,
+        .fast_mode = 1,
+        .fast_skip_threshold = 2,
+        .refine_iterations_1p = 0,
+        .refine_iterations_2p = 1,
+    };
+
+    pub const basic = Settings{
+        .slow_mode = 0,
+        .fast_mode = 0,
+        .fast_skip_threshold = 4,
+        .refine_iterations_1p = 2,
+        .refine_iterations_2p = 2,
+    };
+
+    pub const slow = Settings{
         .slow_mode = 1,
         .fast_mode = 0,
         .fast_skip_threshold = 32,
